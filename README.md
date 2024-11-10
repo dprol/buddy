@@ -1,6 +1,6 @@
 <div align="center">
 
-![buddy logo](images/buddy__ 542x362.png)
+![buddy logo](media/logo.png)
 
 </div>
 

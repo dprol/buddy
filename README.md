@@ -1,5 +1,4 @@
 <h1 align="center">buddy</h1>
-<hr style="height: 1px; border: none; background-color: #e1e4e8;">
 
 <div align="center">
   <a href="https://marketplace.visualstudio.com/">
@@ -17,7 +16,7 @@
   </p>
 </div>
 
-</div>
+<hr style="height: 1px; border: none; background-color: #e1e4e8;">
 
 ## Acerca de buddy
 
@@ -39,5 +38,3 @@ buddy es una extensión de VS Code que actúa como un compañero de aprendizaje 
 ## Contacto
 
 Cuenta de github: [@dprol](https://github.com/dprol)
-
-<p align="right">(<a href="#readme-top">volver arriba</a>)</p>

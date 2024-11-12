@@ -1,4 +1,4 @@
-<h1 align="center">buddy: compañero de programación con IA en tu IDE</h1>
+<h1 align="center">buddy: compañero de programación con IA en VS Code</h1>
 
 <div align="center">
   <a href="https://marketplace.visualstudio.com/">

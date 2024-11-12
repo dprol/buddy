@@ -1,4 +1,4 @@
-<h1 align="center">buddy</h1>
+<h1 align="center">buddy: compañero de programación con IA en tu IDE</h1>
 
 <div align="center">
   <a href="https://marketplace.visualstudio.com/">
@@ -6,7 +6,7 @@
   </a>
  
   <p style="width: 640px">
-    El asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica.
+    El asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica. Buddy funciona con GPT-4o & Claude 3.5 Sonnet.
   </p>
 
   <p>

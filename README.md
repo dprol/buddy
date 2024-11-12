@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="extension/media/buddy__logo.png" alt="buddy logo" width="150" height="156">
+  <img src="extension/media/buddy__logo.png" alt="buddy logo" width="128" height="128">
 </div>
 
 <h1 align="center">buddy</h1>

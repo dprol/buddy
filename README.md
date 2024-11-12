@@ -6,15 +6,17 @@
     <img src="extension/media/buddy__logo.png" alt="buddy logo" width="128" height="128">
   </a>
  
-  <p align="center" style="width: 640px">
+  <p style="width: 640px">
     El asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica.
   </p>
 
-  <p align="center">
+  <p>
     <a href="#características-principales">Características</a>
     ·
     <a href="#inicio-rápido">Inicio Rápido</a>
   </p>
+</div>
+
 </div>
 
 ## Acerca de buddy

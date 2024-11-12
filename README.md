@@ -1,13 +1,10 @@
-# <a name="readme-top"></a>
-<br />
+# buddy
 
 <div align="center">
   <a href="https://marketplace.visualstudio.com/">
     <img src="extension/media/buddy__logo.png" alt="buddy logo" width="128" height="128">
   </a>
-
-  <h1 align="center">buddy</h1>
-  
+ 
   <p align="center" style="width: 640px">
     El asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica.
   </p>
@@ -55,7 +52,5 @@ Distribuido bajo la Licencia MIT. Ver `LICENSE` para más información.
 ## Contacto
 
 Cuenta de github: [@dprol](https://github.com/dprol)
-
-Link del Proyecto: [https://github.com/dprol/buddy](https://github.com/dprol/buddy)
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>

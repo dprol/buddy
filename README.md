@@ -1,4 +1,4 @@
-# buddy
+<h1 align="center">buddy</h1>
 
 <div align="center">
   <a href="https://marketplace.visualstudio.com/">

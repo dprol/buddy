@@ -38,3 +38,4 @@ buddy es una extensión de VS Code que actúa como un compañero de aprendizaje 
 ## Contacto
 
 Cuenta de github: [@dprol](https://github.com/dprol)
+💬 Por favor escribe [aquí](mailto:danielprolperez@gmail.com) para cualquier pregunta, problema, bug o sugerencia.

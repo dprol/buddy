@@ -1,4 +1,5 @@
 <h1 align="center">buddy</h1>
+<div align="center" style="margin-top: 24px;">
 
 <div align="center">
   <a href="https://marketplace.visualstudio.com/">
@@ -13,8 +14,6 @@
     <a href="#características-principales">Características</a>
     ·
     <a href="#inicio-rápido">Inicio Rápido</a>
-    ·
-    <a href="#contribuir">Contribuir</a>
   </p>
 </div>
 
@@ -34,20 +33,6 @@ buddy es una extensión de VS Code que actúa como un compañero de aprendizaje 
 1. Instala la extensión desde el [VS Code Marketplace](https://marketplace.visualstudio.com/)
 2. Abre VS Code y busca "buddy" en la paleta de comandos
 3. ¡Comienza a programar con tu nuevo compañero de aprendizaje!
-
-## Contribuir
-
-buddy es un proyecto open-source y damos la bienvenida a las contribuciones. Si quieres ayudar a mejorar la experiencia de aprendizaje de programación para estudiantes universitarios, ¡únete a nuestro proyecto!
-
-1. Fork el repositorio
-2. Crea una nueva rama (`git checkout -b feature/mejora`)
-3. Haz commit de tus cambios (`git commit -m 'Añade nueva característica'`)
-4. Push a la rama (`git push origin feature/mejora`)
-5. Abre un Pull Request
-
-## Licencia
-
-Distribuido bajo la Licencia MIT. Ver `LICENSE` para más información.
 
 ## Contacto
 

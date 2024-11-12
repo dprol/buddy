@@ -9,7 +9,7 @@
   <h1 align="center">buddy</h1>
   
   <p align="center" style="width: 640px">
-    El asistente de IA open-source para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica.
+    El asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica.
   </p>
 
   <p align="center">
@@ -54,7 +54,7 @@ Distribuido bajo la Licencia MIT. Ver `LICENSE` para más información.
 
 ## Contacto
 
-[Cuenta de github] - [@dprol](https://github.com/dprol)
+Cuenta de github: [@dprol](https://github.com/dprol)
 
 Link del Proyecto: [https://github.com/dprol/buddy](https://github.com/dprol/buddy)
 

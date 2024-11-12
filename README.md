@@ -1,5 +1,6 @@
 <h1 align="center">buddy</h1>
 <div align="center" style="margin-top: 24px;">
+<hr style="height: 1px; border: none; background-color: #e1e4e8;">
 
 <div align="center">
   <a href="https://marketplace.visualstudio.com/">

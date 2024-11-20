@@ -1,5 +1,5 @@
 <div align="center">
-![buddy logo](extension/media/buddy__logo.png)
+![buddy logo](extension/media/readme.jpg)
 </div>
 <h1 align="center">buddy</h1>
 <div align="center">

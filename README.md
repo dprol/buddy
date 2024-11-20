@@ -1,11 +1,9 @@
 <div align="center">
-![buddy logo](extension/media/readme.jpg)
-</div>
-<h1 align="center">buddy</h1>
-<div align="center">
+<img src="extension/media/readme.jpg" alt="buddy logo">
+<h1>buddy</h1>
 **buddy es una extensión de VS Code que actúa como asistente de IA diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica. Funciona con GPT-4 & Claude 3.5 Sonnet.**
 </div>
-<div align="center">
+
 <a target="_blank" href="https://marketplace.visualstudio.com/" style="background:none">
    <img src="https://img.shields.io/badge/VS_Code-Marketplace-blue.svg" style="height: 22px;" />
 </a>
@@ -29,4 +27,3 @@
 
 ## Contacto
 💬 Por favor escribe [aquí](mailto:danielprolperez@gmail.com) para cualquier pregunta, bug o sugerencia.
-</div>

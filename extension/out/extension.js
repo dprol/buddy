@@ -1,6 +1,6 @@
 "use strict";
 
-// configuración del módulo para TypeScript
+// módulo para TypeScript
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 

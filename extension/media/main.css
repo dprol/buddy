@@ -1,10 +1,11 @@
 :root {
-    --buddy-primary: #C41E3A;      /* Rojo principal del logo */
-    --buddy-secondary: #FF6B6B;     /* Rojo más claro para hover */
-    --buddy-background: #FFFFFF;    /* Fondo blanco */
-    --buddy-text: #2C3E50;         /* Texto oscuro */
-    --buddy-border: #E5E5E5;       /* Bordes suaves */
-    --buddy-accent: #FFE4E4;       /* Color de acento suave */
+    /* Aumentando el contraste de los colores principales */
+    --buddy-primary: #DC1436;      /* Rojo principal más oscuro y saturado */
+    --buddy-secondary: #FF4B4B;    /* Rojo secundario más brillante */
+    --buddy-background: #FFFFFF;   
+    --buddy-text: #1A2837;         /* Texto más oscuro para mejor legibilidad */
+    --buddy-border: #D1D5DB;       /* Borde más visible */
+    --buddy-accent: #FFD6D6;       /* Color de acento más saturado */
     
     --container-padding: 20px;
     --input-padding-vertical: 8px;
@@ -35,13 +36,16 @@ button {
     background: var(--buddy-primary);
     font-weight: 600;
     transition: all 0.3s ease;
+    /* Añadiendo sombra para mejor profundidad */
+    box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25);
 }
 
 button:hover {
     cursor: pointer;
     background: var(--buddy-secondary);
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(196, 30, 58, 0.2);
+    /* Sombra más pronunciada en hover */
+    box-shadow: 0 4px 6px rgba(220, 20, 54, 0.3);
 }
 
 /* Campos de entrada */
@@ -59,6 +63,7 @@ textarea#question-input {
     transition: border-color 0.3s ease;
 }
 
+/* Mejorando contraste en estados activos/focus */
 input:focus,
 textarea:focus,
 textarea#question-input:focus,
@@ -67,7 +72,7 @@ textarea#question-input:focus,
 .buddy-button-icon:focus {
     border-color: var(--buddy-primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+    box-shadow: 0 0 0 3px rgba(220, 20, 54, 0.2);
 }
 
 textarea#question-input {
@@ -218,25 +223,30 @@ pre {
     border-radius: 0.25rem;
     margin: 0 0.5rem;
     transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25);
 }
+
 
 .buddy-button:hover {
     background: var(--buddy-secondary);
     transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(220, 20, 54, 0.3);
 }
 
 .buddy-button-secondary {
     background: transparent;
     color: var(--buddy-primary);
-    border: 1px solid var(--buddy-primary);
+    border: 2px solid var(--buddy-primary); /* Borde más grueso */
     padding: 0.25rem 0.75rem;
     border-radius: 0.25rem;
     transition: all 0.2s;
+    font-weight: 600; /* Texto más grueso */
 }
 
 .buddy-button-secondary:hover {
     background: var(--buddy-primary);
     color: white;
+    box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25);
 }
 
 .buddy-button-icon {

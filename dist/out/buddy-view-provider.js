@@ -350,85 +350,6 @@ class BuddyViewProvider {
         });
     }
     /**
-     * Genera los prompts específicos según el tipo de consulta
-     * @param {string} selectedText - Texto de código seleccionado
-     * @param {string} queryType - Tipo de consulta
-     * @param {string} nlPrompt - Prompt en lenguaje natural
-     * @param {boolean} queryWithCode - Indica si la consulta incluye código
-     * @returns {string} Prompt generado
-     */
-    getPrompts(selectedText, queryType, nlPrompt, queryWithCode = false) {
-        let prompt = "";
-        // Generar prompt según el tipo de consulta
-        if (queryType === "askAIOverview") {
-            prompt = `Proporciona un resumen de una línea del siguiente código:
-            ${selectedText}
-        `;
-        }
-        else if (queryType === "askAIQuery" && queryWithCode) {
-            prompt = `En el contexto del siguiente código, ${nlPrompt}: 
-            ${selectedText}`;
-        }
-        else if (queryType === "askAIQuery" && !queryWithCode) {
-            prompt = `${nlPrompt}`;
-        }
-        else {
-            // Analizar APIs en el código
-            const apisMatches = selectedText.match(/\.[\w|\.]+\(/g);
-            const preApis = apisMatches === null || apisMatches === void 0 ? void 0 : apisMatches.map(s => s.slice(1, -1));
-            const apis = [];
-            // Extraer nombres de APIs
-            if (preApis) {
-                for (const api of preApis) {
-                    const apiParts = api.split(".");
-                    if (apiParts.length > 0) {
-                        apis.push(apiParts.slice(-1)[0]);
-                    }
-                }
-            }
-            // Generar prompts específicos según el tipo
-            if (queryType === "askAIConcept") {
-                prompt = `Explica los conceptos específicos del dominio necesarios para entender el siguiente código:
-                ${selectedText}
-                Por favor, no expliques bibliotecas o funciones API, céntrate solo en conceptos del dominio`;
-            }
-            else if (queryType === "askAIUsage") {
-                prompt = `Por favor, proporciona un ejemplo de código, mostrando principalmente el uso de las llamadas API en el siguiente código:
-                ${selectedText}
-            `;
-            }
-        }
-        return prompt;
-    }
-    /**
-     * Maneja las solicitudes a la IA
-     * @param {Object} data - Datos de la solicitud
-     * @param {AbortController} abortController - Controlador para cancelar la solicitud
-     */
-    sendRequest(data, abortController) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                // Asegurar que existe un controlador de aborto
-                if (!abortController) {
-                    abortController = new AbortController();
-                }
-                // Procesar según el tipo de solicitud
-                if (data.type === 'askAIfromTab') {
-                    yield this.sendApiRequestWithCode("", "askAIQuery", abortController, "", data.queryId, data.value);
-                }
-                else if (data.type === 'askAIOverview') {
-                    yield this.sendApiRequestWithCode(data.code, data.type, abortController);
-                }
-                else if (['askAIConcept', 'askAIUsage'].includes(data.type)) {
-                    yield this.sendApiRequestWithCode(data.code, data.type, abortController, data.overviewRef, data.queryId);
-                }
-            }
-            catch (error) {
-                vscode.window.showErrorMessage(`Error al procesar la solicitud: ${error.message}`);
-            }
-        });
-    }
-    /**
      * Generando el prompt completo para la conversación con la IA
      * @param {string} selectedText - Texto seleccionado
      * @param {string} queryType - Tipo de consulta
@@ -746,9 +667,63 @@ class BuddyViewProvider {
                 return output;
             }
             catch (error) {
-                return this.handleQueryError(error, chatPrompt);
+                // Manejar el error directamente aquí en lugar de llamar a un método separado
+                vscode.commands.executeCommand(
+                    telemetry.commands.logTelemetry.name,
+                    new telemetry.LoggerEntry(
+                        "Buddy.queryError",
+                        "Error en consulta: %s, prompt: %s",
+                        [error.message, chatPrompt.map(msg => `${msg.role}::: ${msg.content}`).join(':::::')]
+                    )
+                );
+
+                // Determinar el mensaje de error apropiado
+                let errorMessage = "Lo siento, hubo un error al procesar tu consulta. ";
+                if (error.name === "AbortError") {
+                    errorMessage += "La consulta fue cancelada.";
+                } else if (error.response?.status === 429) {
+                    errorMessage += "Se ha excedido el límite de solicitudes. Por favor, intenta más tarde.";
+                } else if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED") {
+                    errorMessage += "La consulta tomó demasiado tiempo. Por favor, intenta de nuevo.";
+                } else {
+                    errorMessage += "Por favor, verifica tu conexión e intenta de nuevo.";
+                }
+
+                return errorMessage;
             }
         });
+    }
+
+    /**
+     * Maneja los errores que ocurren durante las consultas a la IA
+     * @param {Error} error - El error que ocurrió
+     * @param {Array} chatPrompt - El prompt que causó el error
+     * @returns {string} Mensaje de error formateado
+     */
+    handleQueryError(error, chatPrompt) {
+        // Registrar el error en telemetría
+        vscode.commands.executeCommand(
+            telemetry.commands.logTelemetry.name,
+            new telemetry.LoggerEntry(
+                "Buddy.queryError",
+                "Error en consulta: %s, prompt: %s",
+                [error.message, chatPrompt.map(msg => `${msg.role}::: ${msg.content}`).join(':::::')]
+            )
+        );
+
+        // Determinar el mensaje de error apropiado
+        let errorMessage = "Lo siento, hubo un error al procesar tu consulta. ";
+        if (error.name === "AbortError") {
+            errorMessage += "La consulta fue cancelada.";
+        } else if (error.response?.status === 429) {
+            errorMessage += "Se ha excedido el límite de solicitudes. Por favor, intenta más tarde.";
+        } else if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED") {
+            errorMessage += "La consulta tomó demasiado tiempo. Por favor, intenta de nuevo.";
+        } else {
+            errorMessage += "Por favor, verifica tu conexión e intenta de nuevo.";
+        }
+
+        return errorMessage;
     }
     /**
      * envía un mensaje a la vista web

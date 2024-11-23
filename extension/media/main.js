@@ -41,6 +41,42 @@
         }
     };
 
+     // Añadir lógica para el botón de Pista
+     document.getElementById('hint-button')?.addEventListener('click', () => {
+        const problemText = document.getElementById('problem-text').value.trim();
+        if (!problemText) {
+            vscode.postMessage({ 
+                type: 'error',
+                message: 'Por favor, escribe un problema antes de solicitar una pista.'
+            });
+            return;
+        }
+        vscode.postMessage({ 
+            type: 'askAIHint',
+            problemText: problemText
+        });
+        document.getElementById('in-progress')?.classList.remove('hidden');
+    });
+
+    // Manejador de mensajes para recibir la pista
+    window.addEventListener("message", (event) => {
+        const message = event.data;
+        switch (message.type) {
+            case 'hintResponse':
+                const hintDiv = document.createElement('div');
+                hintDiv.className = 'buddy-response-card';
+                hintDiv.innerHTML = `<div class="font-bold mb-2 flex items-center">
+                                        ${aiIcon}
+                                        <span>Buddy: Pista</span>
+                                    </div>
+                                    <div class="buddy-content">${message.value}</div>`;
+                list.appendChild(hintDiv);
+                list.scrollTo(0, list.scrollHeight);
+                document.getElementById('in-progress')?.classList.add('hidden');
+                break;
+        }
+    });
+
     const commentHandler = function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -319,3 +355,31 @@
     // Inicializar eventos al cargar
     initializeUIEvents();
 })();
+// Añadir botones Concept y Usage después de inicializar la interfaz
+const buttonContainer = document.querySelector(".button-container") || document.createElement("div");
+buttonContainer.className = "button-container";
+
+if (!document.querySelector(".concept-button")) {
+    const conceptButton = document.createElement("button");
+    conceptButton.className = "concept-button";
+    conceptButton.textContent = "Concepto";
+    conceptButton.addEventListener("click", function() {
+        vscode.postMessage({ type: "askAIConcept" });
+    });
+    buttonContainer.appendChild(conceptButton);
+}
+
+if (!document.querySelector(".usage-button")) {
+    const usageButton = document.createElement("button");
+    usageButton.className = "usage-button";
+    usageButton.textContent = "Ejemplos";
+    usageButton.addEventListener("click", function() {
+        vscode.postMessage({ type: "askAIUsage" });
+    });
+    buttonContainer.appendChild(usageButton);
+}
+
+// Añadir el contenedor al body si no está ya presente
+if (!document.querySelector(".button-container")) {
+    document.body.appendChild(buttonContainer);
+}

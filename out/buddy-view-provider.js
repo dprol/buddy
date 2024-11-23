@@ -37,6 +37,88 @@ class BuddyViewProvider {
         this.previousChat = [];
         this.ac = new AbortController();
         this.overviewId = 0;
+        // Inicializar telemetría solo si está disponible
+        try {
+            if (this.context.workspaceState) {
+                this.initTelemetry();
+            }
+        }
+        catch (error) {
+            console.debug('No se pudo inicializar la telemetría');
+        }
+    }
+    initTelemetry() {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                if ((_b = (_a = telemetry === null || telemetry === void 0 ? void 0 : telemetry.commands) === null || _a === void 0 ? void 0 : _a.initTelemetry) === null || _b === void 0 ? void 0 : _b.name) {
+                    yield vscode.commands.executeCommand(telemetry.commands.initTelemetry.name, this.context.workspaceState);
+                }
+            }
+            catch (error) {
+                console.debug('Error inicializando telemetría:', error);
+            }
+        });
+    }
+    // Método seguro para registrar logs
+    logQuery(chatPrompt) {
+        var _a, _b;
+        try {
+            if ((_b = (_a = telemetry === null || telemetry === void 0 ? void 0 : telemetry.commands) === null || _a === void 0 ? void 0 : _a.logTelemetry) === null || _b === void 0 ? void 0 : _b.name) {
+                vscode.commands.executeCommand(telemetry.commands.logTelemetry.name, new telemetry.LoggerEntry("Buddy.query", "Enviando consulta: %s", [chatPrompt.map(msg => `${msg.role}::: ${msg.content}`).join(':::::')])).catch(console.debug); // Manejar errores silenciosamente
+            }
+        }
+        catch (error) {
+            console.debug('Error en telemetría:', error);
+        }
+    }
+    queryAI(chatPrompt, assistantPrompt, abortController, isQuery = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.openai && !this.anthropic) {
+                yield this.setUpConnection();
+            }
+            try {
+                // Llamar a logQuery de manera segura
+                if (typeof this.logQuery === 'function') {
+                    this.logQuery(chatPrompt);
+                }
+                const useAnthropicAPI = yield this.context.globalState.get('useAnthropicAPI', false);
+                if (useAnthropicAPI) {
+                    const response = yield this.anthropic.messages.create({
+                        model: "claude-3-5-sonnet-20241022",
+                        messages: chatPrompt.map(msg => ({
+                            role: msg.role === 'assistant' ? 'assistant' : 'user',
+                            content: msg.content
+                        })),
+                        max_tokens: 2000,
+                        temperature: 0.5,
+                        system: chatPrompt[0].content,
+                        timeout: 60000,
+                        signal: abortController.signal
+                    });
+                    return response.content[0].text.trim();
+                }
+                else {
+                    const response = yield this.openai.chat.completions.create({
+                        model: "gpt-4",
+                        messages: chatPrompt,
+                        max_tokens: 4000,
+                        temperature: 0.7
+                    });
+                    return response.choices[0].message.content.trim();
+                }
+            }
+            catch (error) {
+                console.error("Error en queryAI:", error);
+                throw error;
+            }
+        });
+    }
+    capitalizeFirstLetter(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    lowerFirstLetter(str) {
+        return str.charAt(0).toLowerCase() + str.slice(1);
     }
     setUpConnection() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -48,91 +130,91 @@ class BuddyViewProvider {
                 apiKey: this.credentials.anthropic.apiKey
             });
             console.log("Conexión establecida");
-            vscode.commands.executeCommand(telemetry.commands.logTelemetry.name, new telemetry.LoggerEntry("AI.setupConnection", "Conexión con IA establecida"));
         });
     }
-    queryAI(chatPrompt, assistantPrompt, abortController, isQuery = false) {
-        var _a;
+    updateChatHistory(prompt, output, editorSelectedText) {
+        if (editorSelectedText) {
+            this.previousChat = [{
+                    "role": "system",
+                    "content": `Soy un asistente experto para estudiantes universitarios`
+                }];
+        }
+        this.previousChat.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": output });
+    }
+    sendApiRequestWithCode(selectedText, queryType, abortController, overviewRef = '', queryId = null, nlPrompt = '') {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.openai && !this.anthropic) {
-                yield this.setUpConnection();
+            console.log('Iniciando petición API:', queryType);
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                this.sendMessage({
+                    type: 'error',
+                    message: 'No hay un editor activo.'
+                });
+                return;
             }
             try {
-                this.logQuery(chatPrompt);
-                const useAnthropicAPI = yield this.context.globalState.get('useAnthropicAPI', false);
-                const output = yield this.performAIQuery(useAnthropicAPI, chatPrompt, assistantPrompt, abortController, isQuery);
-                return output;
+                this.sendMessage({ type: 'showProgress' });
+                let [chatPrompt, prompt, assistantPrompt] = yield this.preparePrompt(queryType, selectedText);
+                console.log('Prompt preparado:', prompt);
+                let output = yield this.queryAI(chatPrompt, assistantPrompt, abortController, queryType === "askAIQuery");
+                console.log('Respuesta recibida:', output);
+                yield this.processQueryResponse(queryType, output, prompt, queryId, selectedText);
+                this.sendMessage({ type: 'hideProgress' });
             }
             catch (error) {
-                console.error("Error en queryAI:", error);
-                vscode.commands.executeCommand(telemetry.commands.logTelemetry.name, new telemetry.LoggerEntry("Buddy.queryError", "Error en consulta: %s, prompt: %s", [error.message, chatPrompt.map(msg => `${msg.role}::: ${msg.content}`).join(':::::')]));
-                let errorMessage = "Lo siento, hubo un error al procesar tu consulta. ";
-                if (error.name === "AbortError") {
-                    errorMessage += "La consulta fue cancelada.";
-                }
-                else if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 429) {
-                    errorMessage += "Se ha excedido el límite de solicitudes. Por favor, intenta más tarde.";
-                }
-                else if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED") {
-                    errorMessage += "La consulta tomó demasiado tiempo. Por favor, intenta de nuevo.";
-                }
-                else {
-                    errorMessage += "Por favor, verifica tu conexión e intenta de nuevo.";
-                }
-                return errorMessage;
+                console.error('Error en sendApiRequestWithCode:', error);
+                this.sendMessage({
+                    type: 'error',
+                    message: 'Error: ' + error.message
+                });
             }
         });
     }
-    performAIQuery(useAnthropicAPI, chatPrompt, assistantPrompt, abortController, isQuery) {
+    sendApiRequestWithHint(problemText) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!problemText) {
+                console.error('Error: Texto del problema no proporcionado para askAIHint');
+                return;
+            }
+            console.log('Generando pista para el problema:', problemText);
+            const chatPrompt = [
+                {
+                    "role": "system",
+                    "content": "Eres un asistente experto que proporciona pistas útiles para resolver problemas de programación básica a estudiantes universitarios."
+                },
+                {
+                    "role": "user",
+                    "content": `Dame una pista para resolver el siguiente problema: ${problemText}`
+                }
+            ];
             try {
-                if (useAnthropicAPI) {
-                    const response = yield this.anthropic.messages.create({
-                        model: "claude-3-5-sonnet-20241022",
-                        messages: this.formatMessagesForAnthropic(chatPrompt),
-                        max_tokens: 4000,
-                        temperature: 0.7,
-                        system: chatPrompt[0].content,
-                        timeout: 60000,
-                        signal: abortController.signal
-                    });
-                    return isQuery ?
-                        response.content[0].text.trim() :
-                        assistantPrompt + this.lowerFirstLetter(response.content[0].text.trim());
-                }
-                else {
-                    // Removidos timeout y signal de la llamada a OpenAI
-                    const response = yield this.openai.chat.completions.create({
-                        model: "gpt-4",
-                        messages: chatPrompt,
-                        max_tokens: 4000,
-                        temperature: 0.7
-                    });
-                    return isQuery ?
-                        response.choices[0].message.content.trim() :
-                        assistantPrompt + this.lowerFirstLetter(response.choices[0].message.content.trim());
-                }
+                const hintResponse = yield this.queryAI(chatPrompt, '', new AbortController());
+                console.log('Pista generada:', hintResponse);
+                // Enviar la pista al front-end
+                this.sendMessage({
+                    type: 'addDetail',
+                    value: hintResponse,
+                    detailType: 'hint',
+                    valueHtml: `<p>${hintResponse}</p>`
+                });
             }
             catch (error) {
-                console.error("Error en performAIQuery:", error);
-                throw error;
+                console.error('Error generando la pista:', error);
+                this.sendMessage({
+                    type: 'error',
+                    message: 'Error al generar la pista: ' + error.message
+                });
             }
         });
     }
-    // Métodos auxiliares
-    capitalizeFirstLetter(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1);
+    // Método para enviar mensajes al WebView
+    sendMessage(message) {
+        console.log('Enviando mensaje a WebView:', message);
+        if (this.webView) {
+            this.webView.webview.postMessage(message);
+        }
     }
-    lowerFirstLetter(str) {
-        return str.charAt(0).toLowerCase() + str.slice(1);
-    }
-    formatMessagesForAnthropic(messages) {
-        return messages.map(msg => ({
-            role: msg.role === 'assistant' ? 'assistant' : 'user',
-            content: msg.content
-        }));
-    }
-    // Métodos de UI y gestión de eventos
+    // Vista web y sus manejadores de eventos
     resolveWebviewView(webviewView) {
         this.webView = webviewView;
         webviewView.webview.options = {
@@ -140,212 +222,45 @@ class BuddyViewProvider {
             localResourceRoots: [this.context.extensionUri]
         };
         webviewView.webview.html = this.getHtml(webviewView.webview);
-        webviewView.webview.onDidReceiveMessage(data => {
-            if (['askAIfromTab', 'askAIConcept', 'askAIUsage'].includes(data.type)) {
-                this.ac = new AbortController();
-                this.sendRequest(data, this.ac);
+    }
+    preparePrompt(queryType, problemText) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let chatPrompt = [
+                {
+                    "role": "system",
+                    "content": "Soy un asistente experto para estudiantes universitarios"
+                }
+            ];
+            let prompt = '';
+            let assistantPrompt = this.getAssistantPrompts(queryType);
+            if (queryType === 'askAIConcept') {
+                prompt = `Explica los conceptos específicos del dominio necesarios para entender y resolver el siguiente problema:\n\n${problemText}\n\nPor favor, céntrate en los conceptos clave y fundamentos necesarios.`;
             }
-            else if (data.type === 'clearChat') {
-                this.previousChat = [];
+            else if (queryType === 'askAIUsage') {
+                prompt = `Proporciona una solución paso a paso con ejemplo de código para el siguiente problema:\n\n${problemText}\n\nPor favor, explica cada paso claramente.`;
             }
-            else if (data.type === 'stopQuery') {
-                this.ac.abort();
+            else if (queryType === 'askAIHint') {
+                prompt = `Dame una pista para resolver el siguiente problema:\n\n${problemText}`;
             }
-            else if (data.type === 'embedComment') {
-                console.log(data);
-                this.embedComment(data);
-            }
-            else if (data.type === "reaskAI") {
-                console.log(data);
-                this.ac = new AbortController();
-                this.reaskAI(data, this.ac);
-            }
+            chatPrompt.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": assistantPrompt });
+            return [chatPrompt, prompt, assistantPrompt];
         });
     }
     getAssistantPrompts(queryType) {
         switch (queryType) {
-            case "askAIOverview":
-                return ``;
-            case "askAIQuery":
-                return ``;
             case "askAIConcept":
-                return `Varios conceptos del problema explicados:\n\n1. `;
+                return "Varios conceptos del problema explicados:\n\n1. ";
             case "askAIUsage":
-                return `Aquí tienes un ejemplo de código:\n`;
+                return "Aquí tienes un ejemplo de código:\n";
+            case "askAIHint":
+                return "Aquí tienes una pista útil:\n";
             default:
                 return "";
         }
     }
-    getPrompts(selectedText, queryType, nlPrompt, queryWithCode = false) {
-        let prompt = "";
-        if (queryType === "askAIOverview") {
-            prompt = `Proporciona un resumen de una línea del siguiente código:\n${selectedText}`;
-        }
-        else if (queryType === "askAIQuery" && queryWithCode) {
-            prompt = `En el contexto del siguiente código, ${nlPrompt}:\n${selectedText}`;
-        }
-        else if (queryType === "askAIQuery" && !queryWithCode) {
-            prompt = nlPrompt;
-        }
-        else {
-            // Analizar APIs en el código
-            const apisMatches = selectedText.match(/\.[\w|\.]+\(/g);
-            const preApis = apisMatches === null || apisMatches === void 0 ? void 0 : apisMatches.map(s => s.slice(1, -1));
-            const apis = [];
-            if (preApis) {
-                for (const api of preApis) {
-                    const apiParts = api.split(".");
-                    if (apiParts.length > 0) {
-                        apis.push(apiParts.slice(-1)[0]);
-                    }
-                }
-            }
-            if (queryType === "askAIConcept") {
-                prompt = `Explica los conceptos específicos del dominio necesarios para entender el siguiente código:\n${selectedText}\nPor favor, no expliques bibliotecas o funciones API, céntrate solo en conceptos del dominio`;
-            }
-            else if (queryType === "askAIUsage") {
-                prompt = `Por favor, proporciona un ejemplo de código, mostrando principalmente el uso de las llamadas API en el siguiente código:\n${selectedText}`;
-            }
-        }
-        return prompt;
-    }
-    /**
-     * Prepara el prompt para la consulta
-     */
-    preparePrompt(queryType, selectedText, fileName, overviewRef, nlPrompt, fullFileContent) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let chatPrompt = [];
-            let prompt = "";
-            let assistantPrompt = "";
-            if (queryType === "askAIOverview" || queryType === "askAIQuery") {
-                this.overviewId += 1;
-            }
-            if (queryType === "askAIQuery" && fullFileContent.length > 0) {
-                if (this.previousChat.length < 2) {
-                    [chatPrompt, prompt, assistantPrompt] = this.generateChatPrompt(selectedText, queryType, fileName, overviewRef, nlPrompt, true, fullFileContent);
-                }
-                else {
-                    [chatPrompt, prompt, assistantPrompt] = this.generateChatPrompt(selectedText, queryType, fileName, overviewRef, nlPrompt, false);
-                }
-            }
-            else {
-                [chatPrompt, prompt, assistantPrompt] = this.generateChatPrompt(selectedText, queryType, fileName, overviewRef, nlPrompt, true);
-            }
-            return [chatPrompt, prompt, assistantPrompt];
-        });
-    }
-    /**
-     * Genera el prompt del chat
-     */
-    generateChatPrompt(selectedText, queryType, fileName, overviewRef, nlPrompt, queryWithCode = false, fullFileContent) {
-        let prompt = "";
-        let assistantPrompt = this.getAssistantPrompts(queryType);
-        if (queryType === "askAIQuery" && fullFileContent) {
-            prompt = this.getPrompts(fullFileContent, queryType, nlPrompt, true);
-        }
-        else if (queryType === "askAIQuery" && queryWithCode) {
-            prompt = this.getPrompts(selectedText, queryType, nlPrompt, true);
-        }
-        else {
-            prompt = this.getPrompts(selectedText, queryType, nlPrompt);
-        }
-        let chatPrompt = [
-            {
-                "role": "system",
-                "content": `Soy un asistente experto para estudiantes universitarios`
-            }
-        ];
-        if (["askAIConcept", "askAIUsage"].includes(queryType) && overviewRef) {
-            const overviewPrompt = this.getPrompts(selectedText, "askAIOverview");
-            chatPrompt.push({ "role": "user", "content": overviewPrompt }, { "role": "assistant", "content": overviewRef });
-        }
-        else if (queryType === "askAIQuery" && this.previousChat.length >= 2 && !queryWithCode && nlPrompt) {
-            chatPrompt = this.previousChat.slice(-3);
-            prompt = nlPrompt;
-            assistantPrompt = "";
-        }
-        chatPrompt.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": assistantPrompt });
-        return [chatPrompt, prompt, assistantPrompt];
-    }
-    sendRequest(data, abortController) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                console.log('1. Iniciando sendRequest');
-                console.log('Datos recibidos:', {
-                    type: data.type,
-                    hasCode: !!data.code,
-                    hasQueryId: !!data.queryId,
-                    hasValue: !!data.value
-                });
-                if (!abortController) {
-                    console.log('2. Creando nuevo AbortController');
-                    abortController = new AbortController();
-                }
-                console.log('3. Evaluando tipo de request:', data.type);
-                try {
-                    if (data.type === 'askAIfromTab') {
-                        console.log('4a. Procesando askAIfromTab');
-                        yield this.sendApiRequestWithCode("", "askAIQuery", abortController, "", data.queryId, data.value);
-                        console.log('5a. askAIfromTab completado');
-                    }
-                    else if (data.type === 'askAIOverview') {
-                        console.log('4b. Procesando askAIOverview');
-                        console.log('Código a procesar:', ((_a = data.code) === null || _a === void 0 ? void 0 : _a.substring(0, 100)) + '...');
-                        yield this.sendApiRequestWithCode(data.code, data.type, abortController);
-                        console.log('5b. askAIOverview completado');
-                    }
-                    else if (['askAIConcept', 'askAIUsage'].includes(data.type)) {
-                        console.log('4c. Procesando', data.type);
-                        yield this.sendApiRequestWithCode(data.code, data.type, abortController, data.overviewRef, data.queryId);
-                        console.log('5c.', data.type, 'completado');
-                    }
-                    else {
-                        console.warn('Tipo de request no reconocido:', data.type);
-                    }
-                    console.log('6. Request completado exitosamente');
-                }
-                catch (apiError) {
-                    console.error('Error al llamar sendApiRequestWithCode:', apiError);
-                    console.error('Stack trace:', apiError.stack);
-                    throw apiError; // Re-lanzar para que lo capture el catch exterior
-                }
-            }
-            catch (error) {
-                console.error("Error en sendRequest:", error);
-                console.error("Stack trace completo:", error.stack);
-                vscode.window.showErrorMessage(`Error al procesar la solicitud: ${error.message}`);
-                // Registrar en telemetría si está disponible
-                if (vscode.commands && vscode.commands.executeCommand && this.context) {
-                    try {
-                        vscode.commands.executeCommand('buddy.logTelemetry', new this.context.LoggerEntry("sendRequest.error", "Error en solicitud: %s. Stack: %s", [error.message, error.stack]));
-                    }
-                    catch (telemetryError) {
-                        console.error('Error al registrar telemetría:', telemetryError);
-                    }
-                }
-            }
-        });
-    }
-    logQuery(chatPrompt) {
-        vscode.commands.executeCommand(telemetry.commands.logTelemetry.name, new telemetry.LoggerEntry("Buddy.query", "Enviando consulta: %s", [chatPrompt.map(msg => `${msg.role}::: ${msg.content}`).join(':::::')]));
-    }
-    sendMessage(message) {
-        var _a;
-        console.log('Enviando mensaje al WebView:', message);
-        if (this.webView) {
-            (_a = this.webView) === null || _a === void 0 ? void 0 : _a.webview.postMessage(message);
-        }
-        else {
-            console.error('WebView no está inicializado');
-            this.message = message;
-        }
-    }
-    /**
-         * Procesa y envía la respuesta
-         */
     processQueryResponse(queryType, output, prompt, queryId, editorSelectedText) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('Procesando respuesta:', queryType);
             if (queryType === "askAIOverview") {
                 this.sendMessage({
                     type: 'addOverview',
@@ -380,108 +295,18 @@ class BuddyViewProvider {
                 if (queryType === "askAIQuery") {
                     this.updateChatHistory(prompt, output, editorSelectedText);
                 }
-            }
-        });
-    }
-    /**
-     * Actualiza el historial del chat
-     */
-    updateChatHistory(prompt, output, editorSelectedText) {
-        if (editorSelectedText) {
-            this.previousChat = [{
-                    "role": "system",
-                    "content": `Soy un asistente experto para estudiantes universitarios`
-                }];
-        }
-        this.previousChat.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": output });
-    }
-    /**
-     * Genera el HTML de la vista web
-     */
-    getHtml(webview) {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'main.js'));
-        const stylesMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'main.css'));
-        const stylesHighlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'node_modules', 'highlight.js', 'styles', 'github-dark.css'));
-        return `<!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link href="${stylesHighlightUri}" rel="stylesheet">
-            <link href="${stylesMainUri}" rel="stylesheet">
-            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-            <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="overflow-hidden">
-            <div class="flex flex-col h-screen">
-                <!-- ... resto del HTML ... -->
-                <div id="qa-list" class="flex-1 overflow-y-auto"></div>
-                <!-- ... resto del HTML ... -->
-            </div>
-            <script>
-                (function() {
-                    const vscode = acquireVsCodeApi();
-                    const qaList = document.getElementById('qa-list');
-
-                    window.addEventListener('message', event => {
-                        const message = event.data;
-                        console.log('Mensaje recibido en WebView:', message);
-
-                        switch (message.type) {
-                            case 'addOverview':
-                                const overviewDiv = document.createElement('div');
-                                overviewDiv.className = 'overview p-4 m-2 border rounded';
-                                overviewDiv.innerHTML = message.valueHtml;
-                                qaList.appendChild(overviewDiv);
-                                break;
-                            // ... otros casos ...
-                        }
-                    });
-                }())
-            </script>
-        </body>
-        </html>`;
-    }
-    /**
-     * Maneja las solicitudes de código a la IA
-     */
-    sendApiRequestWithCode(selectedText, queryType, abortController, overviewRef, queryId, nlPrompt) {
-        var _a, _b;
-        return __awaiter(this, void 0, void 0, function* () {
-            const editor = vscode.window.activeTextEditor;
-            if (!editor)
-                return;
-            try {
-                let fileName = editor.document.fileName;
-                let editorSelectedText = editor.document.getText(editor.selection);
-                let fullFileContent = "";
-                if (queryType === "askAIQuery") {
-                    if (editorSelectedText) {
-                        selectedText = editorSelectedText;
-                    }
-                    else {
-                        fullFileContent = editor.document.getText();
-                    }
-                }
-                if (!this.webView) {
-                    yield vscode.commands.executeCommand('buddy-vscode-plugin.view.focus');
-                }
                 else {
-                    (_b = (_a = this.webView) === null || _a === void 0 ? void 0 : _a.show) === null || _b === void 0 ? void 0 : _b.call(_a, true);
+                    this.previousChat.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": output });
                 }
-                let [chatPrompt, prompt, assistantPrompt] = yield this.preparePrompt(queryType, selectedText, fileName, overviewRef, nlPrompt, fullFileContent);
-                let output = yield this.queryAI(chatPrompt, assistantPrompt, abortController, queryType === "askAIQuery");
-                yield this.processQueryResponse(queryType, output, prompt, queryId, editorSelectedText);
-            }
-            catch (error) {
-                console.error("Error en sendApiRequestWithCode:", error);
-                vscode.window.showErrorMessage(`Error al procesar la consulta: ${error.message}`);
             }
         });
     }
-    /**
-     * Re-ejecuta una consulta a la IA
-     */
+    sendMessage(message) {
+        console.log('Enviando mensaje a WebView:', message);
+        if (this.webView) {
+            this.webView.webview.postMessage(message);
+        }
+    }
     reaskAI(data, abortController) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -505,6 +330,186 @@ class BuddyViewProvider {
                 vscode.window.showErrorMessage(`Error al actualizar la consulta: ${error.message}`);
             }
         });
+    }
+    /**
+     * vista web y sus manejadores de eventos
+     */
+    resolveWebviewView(webviewView) {
+        this.webView = webviewView;
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [this.context.extensionUri]
+        };
+        webviewView.webview.html = this.getHtml(webviewView.webview);
+        webviewView.webview.onDidReceiveMessage((data) => __awaiter(this, void 0, void 0, function* () {
+            console.log('Mensaje recibido:', data);
+            try {
+                if (['askAIConcept', 'askAIUsage', 'askAIHint'].includes(data.type)) {
+                    this.ac = new AbortController();
+                    console.log('Procesando solicitud:', data.type);
+                    const [chatPrompt, prompt, assistantPrompt] = yield this.preparePrompt(data.type, data.problemText);
+                    let output = yield this.queryAI(chatPrompt, assistantPrompt, this.ac);
+                    yield this.processQueryResponse(data.type, output, prompt);
+                }
+                else if (data.type === 'clearChat') {
+                    this.previousChat = [];
+                    console.log('Chat limpiado');
+                }
+            }
+            catch (error) {
+                console.error('Error procesando mensaje:', error);
+                this.sendMessage({
+                    type: 'error',
+                    message: 'Error: ' + error.message
+                });
+            }
+        }));
+    }
+    getHtml(webview) {
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'main.js'));
+        const stylesMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'main.css'));
+        const stylesHighlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'node_modules', 'highlight.js', 'styles', 'github-dark.css'));
+        return `<!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="${stylesHighlightUri}" rel="stylesheet">
+            <link href="${stylesMainUri}" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+            <title>BUDDY</title>
+        </head>
+        <body>
+            <div class="flex flex-col h-screen">
+                <div class="problem-box">
+                    <textarea id="problem-text" class="problem-content" placeholder="Escribe aquí el problema a resolver..."></textarea>
+                </div>
+    
+                <div class="button-container">
+                    <button class="buddy-button action-button" id="concept-button">
+                        <span>Conceptos</span>
+                    </button>
+                    <button class="buddy-button action-button" id="usage-button">
+                        <span>Ejemplos</span>
+                    </button>
+                    <button class="buddy-button action-button" id="hint-button">
+                        <span>Pista</span>
+                    </button>
+                    <button class="buddy-button action-button" id="clear-button">
+                        <span>Limpiar Chat</span>
+                    </button>
+                </div>
+                
+                <div id="qa-list" class="flex-1 overflow-y-auto p-4">
+                    <!-- Lista de preguntas y respuestas -->
+                </div>
+                
+                <div id="in-progress" class="hidden">
+                    <div class="loader"></div>
+                </div>
+            </div>
+    
+            <script>
+            (function() {
+                const vscode = acquireVsCodeApi();
+                const qaList = document.getElementById('qa-list');
+                
+                function getProblemText() {
+                    return document.getElementById('problem-text').value.trim();
+                }
+                
+                // Event Listeners para los botones
+                document.getElementById('concept-button')?.addEventListener('click', () => {
+                    const problemText = getProblemText();
+                    if (!problemText) {
+                        vscode.postMessage({ 
+                            type: 'error',
+                            message: 'Por favor, escribe un problema antes de solicitar los conceptos.'
+                        });
+                        return;
+                    }
+                    vscode.postMessage({ 
+                        type: 'askAIConcept',
+                        problemText: getProblemText()
+                    });
+                    document.getElementById('in-progress')?.classList.remove('hidden');
+                });
+    
+                document.getElementById('usage-button')?.addEventListener('click', () => {
+                    const problemText = getProblemText();
+                    if (!problemText) {
+                        vscode.postMessage({ 
+                            type: 'error',
+                            message: 'Por favor, escribe un problema antes de solicitar ejemplos.'
+                        });
+                        return;
+                    }
+                    vscode.postMessage({ 
+                        type: 'askAIUsage',
+                        problemText: getProblemText()
+                    });
+                    document.getElementById('in-progress')?.classList.remove('hidden');
+                });
+    
+                document.getElementById('hint-button')?.addEventListener('click', () => {
+                    const problemText = getProblemText();
+                    if (!problemText) {
+                        vscode.postMessage({ 
+                            type: 'error',
+                            message: 'Por favor, escribe un problema antes de solicitar una pista.'
+                        });
+                        return;
+                    }
+                    vscode.postMessage({ 
+                        type: 'askAIHint',
+                        problemText: getProblemText(),
+                        message: 'Aquí tienes una pista para resolver el problema:'
+                    });
+                    document.getElementById('in-progress')?.classList.remove('hidden');
+                });
+    
+                document.getElementById('clear-button')?.addEventListener('click', () => {
+                    document.getElementById('problem-text').value = '';
+                    if (qaList) {
+                        qaList.innerHTML = '';
+                        vscode.postMessage({ type: 'clearChat' });
+                    }
+                });
+    
+                window.addEventListener('message', event => {
+                    const message = event.data;
+                    console.log('Mensaje recibido:', message);
+    
+                    switch (message.type) {
+                        case 'updateProblem':
+                            document.getElementById('problem-text').value = message.text;
+                            break;
+                        case 'showProgress':
+                            document.getElementById('in-progress')?.classList.remove('hidden');
+                            break;
+                        case 'hideProgress':
+                            document.getElementById('in-progress')?.classList.add('hidden');
+                            break;
+                        case 'addDetail':
+                        case 'addOverview':
+                            if (qaList) {
+                                const responseDiv = document.createElement('div');
+                                responseDiv.className = 'buddy-response-card';
+                                responseDiv.innerHTML = message.valueHtml;
+                                qaList.appendChild(responseDiv);
+                                qaList.scrollTo(0, qaList.scrollHeight);
+                            }
+                            document.getElementById('in-progress')?.classList.add('hidden');
+                            break;
+                        case 'error':
+                            alert(message.message);
+                            break;
+                    }
+                });
+            })();
+            </script>
+        </body>
+        </html>`;
     }
 }
 exports.default = BuddyViewProvider;

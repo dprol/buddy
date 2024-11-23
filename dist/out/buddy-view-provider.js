@@ -70,13 +70,13 @@ class BuddyViewProvider {
     getAssistantPrompts(queryType) {
         switch (queryType) {
             case "askAIOverview":
-                return `Este código `;
+                return ``;
             case "askAIQuery":
-                return `En este código, `;
+                return ``;
             case "askAIConcept":
                 return `Varios conceptos del problema explicados:\n\n1. `;
             case "askAIUsage":
-                return `Aquí tienes un ejemplo de código:\n`;
+                return `Aquí tienes un ejemplo:\n`;
             default:
                 return "";
         }
@@ -91,24 +91,29 @@ class BuddyViewProvider {
             localResourceRoots: [this.context.extensionUri]
         };
         webviewView.webview.html = this.getHtml(webviewView.webview);
-        // manejadores de eventos para los mensajes de la vista web
+    
         webviewView.webview.onDidReceiveMessage(data => {
             if (['askAIfromTab', 'askAIConcept', 'askAIUsage'].includes(data.type)) {
                 this.ac = new AbortController();
-                this.sendRequest(data, this.ac);
-            }
-            else if (data.type === 'clearChat') {
+                // Obtener el texto seleccionado del editor
+                const editor = vscode.window.activeTextEditor;
+                if (editor) {
+                    const selectedText = editor.document.getText(editor.selection);
+                    if (selectedText) {
+                        // Actualizar data con el texto seleccionado
+                        data.code = selectedText;
+                        this.sendRequest(data, this.ac);
+                    } else {
+                        vscode.window.showInformationMessage('Por favor, selecciona código para analizar.');
+                    }
+                }
+            } else if (data.type === 'clearChat') {
                 this.previousChat = [];
-            }
-            else if (data.type === 'stopQuery') {
+            } else if (data.type === 'stopQuery') {
                 this.ac.abort();
-            }
-            else if (data.type === 'embedComment') {
-                console.log(data);
+            } else if (data.type === 'embedComment') {
                 this.embedComment(data);
-            }
-            else if (data.type === "reaskAI") {
-                console.log(data);
+            } else if (data.type === "reaskAI") {
                 this.ac = new AbortController();
                 this.reaskAI(data, this.ac);
             }
@@ -310,12 +315,12 @@ class BuddyViewProvider {
             prompt = `${nlPrompt}`;
         }
         else if (queryType === "askAIConcept") {
-            prompt = `Explica los conceptos necesarios para entender el siguiente problema:
+            prompt = `Te explico los conceptos necesarios para entender el problema:
         ${selectedText}
-        Por favor, no expliques bibliotecas o funciones API, céntrate solo en conceptos del dominio`;
+        `;
         }
         else if (queryType === "askAIUsage") {
-            prompt = `Por favor, proporciona un ejemplo de código:
+            prompt = `Te proporciono un ejemplo:
         ${selectedText}
     `;
         }

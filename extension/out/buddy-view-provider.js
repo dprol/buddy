@@ -72,13 +72,13 @@ class BuddyViewProvider {
     getAssistantPrompts(queryType) {
         switch (queryType) {
             case "askAIOverview":
-                return `Este código `;
+                return ``;
             case "askAIQuery":
-                return `En este código, `;
+                return ``;
             case "askAIConcept":
                 return `Varios conceptos del problema explicados:\n\n1. `;
             case "askAIUsage":
-                return `Aquí tienes un ejemplo de código:\n`;
+                return `Aquí tienes un ejemplo:\n`;
             default:
                 return "";
         }
@@ -93,29 +93,57 @@ class BuddyViewProvider {
             enableScripts: true,
             localResourceRoots: [this.context.extensionUri]
         };
-
         webviewView.webview.html = this.getHtml(webviewView.webview);
-
-        // manejadores de eventos para los mensajes de la vista web
-        webviewView.webview.onDidReceiveMessage(data => {
-            if (['askAIfromTab', 'askAIConcept', 'askAIUsage'].includes(data.type)) {
-                this.ac = new AbortController();
-                this.sendRequest(data, this.ac);
-            }
-            else if (data.type === 'clearChat') {
-                this.previousChat = [];
-            }
-            else if (data.type === 'stopQuery') {
-                this.ac.abort();
-            }
-            else if (data.type === 'embedComment') {
-                console.log(data);
-                this.embedComment(data);
-            }
-            else if (data.type === "reaskAI") {
-                console.log(data);
-                this.ac = new AbortController();
-                this.reaskAI(data, this.ac);
+    
+        webviewView.webview.onDidReceiveMessage(async (data) => {
+            console.log('Mensaje recibido:', data);
+    
+            try {
+                if (['askAIConcept', 'askAIUsage'].includes(data.type)) {
+                    const editor = vscode.window.activeTextEditor;
+                    if (!editor) {
+                        this.sendMessage({
+                            type: 'error',
+                            message: 'No hay un editor activo.'
+                        });
+                        return;
+                    }
+    
+                    const selection = editor.selection;
+                    if (selection.isEmpty) {
+                        this.sendMessage({
+                            type: 'error',
+                            message: 'Por favor, selecciona código para analizar.'
+                        });
+                        return;
+                    }
+    
+                    const selectedText = editor.document.getText(selection);
+                    if (!selectedText.trim()) {
+                        this.sendMessage({
+                            type: 'error',
+                            message: 'La selección está vacía.'
+                        });
+                        return;
+                    }
+    
+                    this.ac = new AbortController();
+                    console.log('Procesando solicitud:', data.type);
+                    await this.sendApiRequestWithCode(
+                        selectedText,
+                        data.type,
+                        this.ac
+                    );
+                } else if (data.type === 'clearChat') {
+                    this.previousChat = [];
+                    console.log('Chat limpiado');
+                }
+            } catch (error) {
+                console.error('Error procesando mensaje:', error);
+                this.sendMessage({
+                    type: 'error',
+                    message: 'Error: ' + error.message
+                });
             }
         });
     }

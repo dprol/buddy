@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "rootDir": "extension",
+    "strict": true,
+    "sourceMap": true,
+    "allowJs": true
+  },
+  "include": [
+    "extension/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "out"
+  ]
+}

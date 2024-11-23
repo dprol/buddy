@@ -1,10 +1,10 @@
 {
     "name": "buddy-ai",
-    "displayName": "Buddy AI",
-    "description": "Buddy AI es un asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica. Proporciona explicaciones claras del código y ejemplos prácticos, ayudando a los estudiantes a comprender mejor los conceptos fundamentales de programación.",
+    "displayName": "buddy",
+    "description": "buddy es un asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica. Proporciona explicaciones claras del código y ejemplos prácticos, ayudando a los estudiantes a comprender mejor los conceptos fundamentales de programación.",
     "version": "0.0.1-pre",
     "repository": "https://github.com/dprol/buddy",
-    "icon": "media/logo.png",
+    "icon": "media/icon.png",
     "engines": {
         "vscode": "^1.95.0"
     },
@@ -125,7 +125,7 @@
                 {
                     "id": "buddy-vscode-plugin",
                     "title": "Buddy",
-                    "icon": "media/logo.png"
+                    "icon": "media/icon.png"
                 }
             ]
         },
@@ -163,7 +163,7 @@
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.18.0",
-        "@ts-stack/markdown": "^1.5.0",
+        "@ts-stack/markdown": "^1.0.0",
         "highlight.js": "^11.10.0",
         "indent-string": "^5.0.0",
         "json5": "^2.2.3",

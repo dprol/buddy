@@ -52,35 +52,59 @@ function activate(context) {
             context.subscriptions.push(reg);
             disposables.push(reg);
         }
-        /**
-         * comando: crear explicación del código seleccionado
-         * utiliza IA para generar una explicación del código resaltado
-         */
         let createExplanation = vscode.commands.registerCommand('buddy.createExp', () => __awaiter(this, void 0, void 0, function* () {
-            console.log('Ejecutando createExp');
-            // obtener el editor activo
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) {
-                return; // si no hay editor activo, salir
+            try {
+                console.log('1. Iniciando createExp');
+                const editor = vscode.window.activeTextEditor;
+                if (!editor) {
+                    console.log('No hay editor activo');
+                    return;
+                }
+                const selectedText = editor.document.getText(editor.selection);
+                console.log('2. Texto seleccionado:', selectedText);
+                if (!selectedText) {
+                    console.log('No hay texto seleccionado');
+                    vscode.window.showWarningMessage('No se ha seleccionado ningún texto');
+                    return;
+                }
+                statusBarItem.hide();
+                const statusMessage = vscode.window.setStatusBarMessage('$(hubot) Generando una explicación! $(book)');
+                console.log('3. Preparando request para buddyViewProvider');
+                console.log('Datos a enviar:', {
+                    code: selectedText,
+                    type: "askAIOverview",
+                    filename: editor.document.fileName
+                });
+                console.log('4. Enviando request a buddyViewProvider');
+                try {
+                    yield buddyViewProvider.sendRequest({
+                        code: selectedText,
+                        type: "askAIOverview",
+                        filename: editor.document.fileName
+                    }, new AbortController());
+                    console.log('5. Request completado exitosamente');
+                }
+                catch (requestError) {
+                    console.error('Error en el request:', requestError);
+                    throw requestError; // Re-lanzar para que lo capture el catch exterior
+                }
+                console.log('6. Limpiando UI');
+                statusMessage.dispose();
+                statusBarItem.show();
+                console.log('7. Proceso completado');
             }
-            // obtener el texto seleccionado
-            const selectedText = editor.document.getText(editor.selection);
-            if (!selectedText) {
-                vscode.window.showWarningMessage('No se ha seleccionado ningún texto');
-                return;
+            catch (error) {
+                console.error('Error en createExp:', error);
+                console.error('Stack trace:', error.stack);
+                vscode.window.showErrorMessage(`Error al generar explicación: ${error.message}`);
+                // Registrar en telemetría con más detalles
+                vscode.commands.executeCommand(tm.commands.logTelemetry.name, new tm.LoggerEntry("createExp.error", "Error al generar explicación: %s. Stack: %s", [error.message, error.stack]));
+                // Asegurar que la UI se restaure
+                if (statusMessage) {
+                    statusMessage.dispose();
+                }
+                statusBarItem.show();
             }
-            // actualizar UI y enviar solicitud
-            statusBarItem.hide();
-            const statusMessage = vscode.window.setStatusBarMessage('$(hubot) Generando una explicación! $(book)');
-            // enviar solicitud a la vista
-            yield buddyViewProvider.sendRequest({
-                code: selectedText,
-                type: "askAIOverview",
-                filename: editor.document.fileName
-            });
-            // restaurar UI
-            statusMessage.dispose();
-            statusBarItem.show();
         }));
         /**
          * actualizar clave API de OpenAI
@@ -132,7 +156,10 @@ function activate(context) {
         }));
         // registrar todos los comandos y vista para el contexto
         context.subscriptions.push(createExplanation, updateOpenAIKey, updateAnthropicKey, removeOpenAIKey, removeAnthropicKey, vscode.window.registerWebviewViewProvider("buddy-vscode-plugin.view", buddyViewProvider, {
-            webviewOptions: { retainContextWhenHidden: true }
+            webviewOptions: {
+                retainContextWhenHidden: true,
+                enableScripts: true
+            }
         }));
         // registrar los listeners de telemetría
         tm.listeners.forEach((listener) => {

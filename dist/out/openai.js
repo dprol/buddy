@@ -61,7 +61,7 @@ class OpenAIProvider extends AIProvider {
                     throw new Error(reason);
                 }
                 const response = yield this.openai.createChatCompletion(payload, {
-                    timeout: options.timeout || 60000,
+                    timeout: options.timeout || 30000,
                     signal: options.abortSignal
                 });
                 return this.processResponse(response);

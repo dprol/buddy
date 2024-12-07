@@ -77,7 +77,7 @@ suite('Pruebas de Utilidades de Buddy', () => {
         test('Validar carga útil de chat válida', () => {
             const payload = {
                 model: "claude-3-5-sonnet-20241022",
-                max_tokens: 2000,
+                max_tokens: 1500,
                 temperature: 0.7
             };
             const { isValid } = utils.validateChatPayload(payload);

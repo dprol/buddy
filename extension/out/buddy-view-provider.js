@@ -874,7 +874,7 @@ async performAIQuery(useAnthropicAPI, chatPrompt, assistantPrompt, abortControll
                 max_tokens: 4000,
                 temperature: 0.7,
                 system: chatPrompt[0].content,
-                timeout: 60000,
+                timeout: 30000,
                 signal: abortController.signal
             });
 
@@ -955,44 +955,205 @@ getHtml(webview) {
             <link href="${stylesHighlightUri}" rel="stylesheet">
             <link href="${stylesMainUri}" rel="stylesheet">
             <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-            <script src="https://cdn.tailwindcss.com"></script>
+            <title>BUDDY</title>
+            <style>
+                body {
+                    background-color: #f3f4f6;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    color: #1f2937;
+                }
+                .problem-box {
+                    background-color: #e5e7eb;
+                    border-radius: 8px;
+                    padding: 10px;
+                    margin: 20px;
+                }
+                .button-container {
+                    display: flex;
+                    justify-content: space-around;
+                    margin: 20px;
+                }
+                .buddy-button {
+                    background-color: #ff4b4b;
+                    border: none;
+                    color: white;
+                    padding: 10px 20px;
+                    text-align: center;
+                    text-decoration: none;
+                    display: inline-block;
+                    font-size: 16px;
+                    margin: 4px 2px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                }
+                .buddy-button:hover {
+                    background-color: #ff7878;
+                }
+                .buddy-response-card {
+                    background-color: #ffffff;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin: 10px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                .buddy-highlight {
+                    background-color: #fef3c7;
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+                #in-progress {
+                    text-align: center;
+                    padding: 20px;
+                }
+                .loader {
+                    border: 5px solid #f3f4f6;
+                    border-top: 5px solid #ff4b4b;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    animation: spin 1s linear infinite;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
         </head>
-        <body class="overflow-hidden">
+        <body>
             <div class="flex flex-col h-screen">
-                <div class="flex">
-                    <button style="background: var(--vscode-button-background); margin-left: auto;" 
-                            id="clear-button" class="mr-2 mt-4 mb-4 pl-1 pr-1">Limpiar todo</button>
-                    <button style="background: var(--vscode-button-background); color: var(--vscode-errorForeground); font-weight: bolder;" 
-                            id="stop-button" class="mr-2 mr-4 mt-4 mb-4 pl-1 pr-1">&#9633; </button>
+                <div class="problem-box">
+                    <textarea id="problem-text" class="problem-content" placeholder="Escribe aquí el problema a resolver..."></textarea>
                 </div>
-                <div class="flex-1 overflow-y-auto" id="qa-list"></div>
-                <div id="in-progress" class="p-4 flex items-center hidden">
-                    <div style="text-align: center;">
-                        <div>Por favor, espera mientras pienso la mejor respuesta...</div>
-                        <div class="loader"></div>
-                    </div>
+    
+                <div class="button-container">
+                    <button class="buddy-button action-button" id="concept-button">
+                        <span>Conceptos</span>
+                    </button>
+                    <button class="buddy-button action-button" id="usage-button">
+                        <span>Ejemplos</span>
+                    </button>
+                    <button class="buddy-button action-button" id="hint-button">
+                        <span>Pista</span>
+                    </button>
+                    <button class="buddy-button action-button" id="clear-button">
+                        <span>Limpiar Chat</span>
+                    </button>
                 </div>
-                <div class="p-4 flex items-center">
-                    <div class="flex-1">
-                        <textarea
-                            type="text"
-                            rows="2"
-                            class="border p-2 w-full"
-                            id="question-input"
-                            placeholder="Haz una pregunta..."
-                        ></textarea>
-                    </div>
-                    <button style="background: var(--vscode-button-background)" 
-                            id="ask-button" class="p-2 ml-5">Preguntar</button>
+                
+                <div id="qa-list" class="flex-1 overflow-y-auto p-4">
+                    <!-- Lista de preguntas y respuestas -->
+                </div>
+                
+                <div id="in-progress" class="hidden">
+                    <div class="loader"></div>
                 </div>
             </div>
-            <script src="${scriptUri}"></script>
+    
+            <script>
+            (function() {
+                const vscode = acquireVsCodeApi();
+                const qaList = document.getElementById('qa-list');
+                
+                function getProblemText() {
+                    return document.getElementById('problem-text').value.trim();
+                }
+                
+                // Event Listeners para los botones
+                document.getElementById('concept-button')?.addEventListener('click', () => {
+                    const problemText = getProblemText();
+                    if (!problemText) {
+                        vscode.postMessage({ 
+                            type: 'error',
+                            message: 'Por favor, escribe un problema antes de solicitar los conceptos.'
+                        });
+                        return;
+                    }
+                    vscode.postMessage({ 
+                        type: 'askAIConcept',
+                        problemText: getProblemText()
+                    });
+                    document.getElementById('in-progress')?.classList.remove('hidden');
+                });
+    
+                document.getElementById('usage-button')?.addEventListener('click', () => {
+                    const problemText = getProblemText();
+                    if (!problemText) {
+                        vscode.postMessage({ 
+                            type: 'error',
+                            message: 'Por favor, escribe un problema antes de solicitar ejemplos.'
+                        });
+                        return;
+                    }
+                    vscode.postMessage({ 
+                        type: 'askAIUsage',
+                        problemText: getProblemText()
+                    });
+                    document.getElementById('in-progress')?.classList.remove('hidden');
+                });
+    
+                document.getElementById('hint-button')?.addEventListener('click', () => {
+                    const problemText = getProblemText();
+                    if (!problemText) {
+                        vscode.postMessage({ 
+                            type: 'error',
+                            message: 'Por favor, escribe un problema antes de solicitar una pista.'
+                        });
+                        return;
+                    }
+                    vscode.postMessage({ 
+                        type: 'askAIHint',
+                        problemText: getProblemText(),
+                        message: 'Aquí tienes una pista para resolver el problema:'
+                    });
+                    document.getElementById('in-progress')?.classList.remove('hidden');
+                });
+    
+                document.getElementById('clear-button')?.addEventListener('click', () => {
+                    document.getElementById('problem-text').value = '';
+                    if (qaList) {
+                        qaList.innerHTML = '';
+                        vscode.postMessage({ type: 'clearChat' });
+                    }
+                });
+    
+                window.addEventListener('message', event => {
+                    const message = event.data;
+                    console.log('Mensaje recibido:', message);
+    
+                    switch (message.type) {
+                        case 'updateProblem':
+                            document.getElementById('problem-text').value = message.text;
+                            break;
+                        case 'showProgress':
+                            document.getElementById('in-progress')?.classList.remove('hidden');
+                            break;
+                        case 'hideProgress':
+                            document.getElementById('in-progress')?.classList.add('hidden');
+                            break;
+                        case 'addDetail':
+                        case 'addOverview':
+                            if (qaList) {
+                                const responseDiv = document.createElement('div');
+                                responseDiv.className = 'buddy-response-card';
+                                responseDiv.innerHTML = message.valueHtml;
+                                qaList.appendChild(responseDiv);
+                                qaList.scrollTo(0, qaList.scrollHeight);
+                            }
+                            document.getElementById('in-progress')?.classList.add('hidden');
+                            break;
+                        case 'error':
+                            alert(message.message);
+                            break;
+                    }
+                });
+            })();
+            </script>
         </body>
         </html>`;
-}
+    }
 }
 /**
  * exportación de la clase BuddyViewProvider
  * Esta clase maneja la interfaz de usuario y la comunicación con las APIs de IA
  */
-exports.default = BuddyViewProvider;
+module.exports = BuddyViewProvider;

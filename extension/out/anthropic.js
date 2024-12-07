@@ -54,7 +54,7 @@ class AnthropicProvider extends AIProvider {
 
             const response = await this.anthropic.messages.create({
                 ...payload,
-                timeout: options.timeout || 60000,
+                timeout: options.timeout || 30000,
                 signal: options.abortSignal
             });
 

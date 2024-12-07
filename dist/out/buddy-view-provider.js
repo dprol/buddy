@@ -633,7 +633,7 @@ class BuddyViewProvider {
                         max_tokens: 4000,
                         temperature: 0.7,
                         system: chatPrompt[0].content,
-                        timeout: 60000,
+                        timeout: 30000,
                         signal: abortController.signal
                     });
                     return isQuery ?

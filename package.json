@@ -1,16 +1,15 @@
 {
-    "name": "buddy-ai",
+    "name": "buddy",
     "displayName": "buddy",
-    "description": "buddy es un asistente de IA para VS Code diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica. Proporciona explicaciones claras del código y ejemplos prácticos, ayudando a los estudiantes a comprender mejor los conceptos fundamentales de programación.",
-    "version": "0.0.1-pre",
+    "description": "buddy es un asistente de IA para VS Code para estudiantes universitarios que están aprendiendo programación básica. Proporciona explicaciones claras del código y ejemplos prácticos, ayudando a los estudiantes a comprender mejor los conceptos fundamentales de programación.",
+    "version": "0.0.2",
     "repository": "https://github.com/dprol/buddy",
-    "icon": "media/icon.png",
+    "icon": "extension/media/icon.png",
     "engines": {
         "vscode": "^1.95.0"
     },
     "categories": [
         "Education",
-        "Machine Learning",
         "Programming Languages"
     ],
     "keywords": [
@@ -19,7 +18,6 @@
         "educación",
         "programación",
         "aprendizaje",
-        "OpenAI",
         "Anthropic",
         "Claude",
         "asistente"
@@ -27,7 +25,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "main": "./out/extension.js",
+    "main": "./src/extension.js",
     "contributes": {
         "commands": [
             {
@@ -54,16 +52,6 @@
                 "command": "buddy.removeAnthropicKey",
                 "title": "Eliminar Clave API de Anthropic",
                 "icon": "$(trash)"
-            },
-            {
-                "command": "buddy.telemetry.DumpLog",
-                "title": "Exportar Logs de Telemetría",
-                "category": "Buddy"
-            },
-            {
-                "command": "buddy.telemetry.ClearLog",
-                "title": "Limpiar Logs de Telemetría",
-                "category": "Buddy"
             }
         ],
         "configuration": {
@@ -85,7 +73,7 @@
                 },
                 "buddy.openai.model": {
                     "type": "string",
-                    "default": "gpt-4-turbo-preview",
+                    "default": "gpt-4",
                     "description": "Modelo de OpenAI a utilizar"
                 },
                 "buddy.anthropic.model": {
@@ -95,21 +83,16 @@
                 },
                 "buddy.maxTokens": {
                     "type": "number",
-                    "default": 4000,
+                    "default": 2000,
                     "minimum": 1,
                     "description": "Número máximo de tokens por solicitud"
                 },
                 "buddy.temperature": {
                     "type": "number",
-                    "default": 0.7,
+                    "default": 0.5,
                     "minimum": 0,
                     "maximum": 1,
                     "description": "Temperatura para la generación de respuestas (0-1)"
-                },
-                "buddy.telemetry.active": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Activar telemetría (requiere reinicio)"
                 }
             }
         },
@@ -125,7 +108,7 @@
                 {
                     "id": "buddy-vscode-plugin",
                     "title": "Buddy",
-                    "icon": "media/icon.png"
+                    "icon": "extension/media/icon.png"
                 }
             ]
         },
@@ -169,7 +152,7 @@
         "json5": "^2.2.3",
         "openai": "^4.73.0"
     },
-    "author": "Diego Prol",
+    "author": "Daniel Prol",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/dprol/buddy/issues"

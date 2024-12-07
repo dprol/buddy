@@ -14,7 +14,6 @@ const vscode = require("vscode");
 const openai_1 = require("openai");
 const anthropic_1 = require("@anthropic-ai/sdk");
 const utils_1 = require("./utils");
-const telemetry = require("./telemetry");
 const markdown_1 = require("@ts-stack/markdown");
 const highlight_js_1 = require("highlight.js");
 /**
@@ -37,76 +36,26 @@ class BuddyViewProvider {
         this.previousChat = [];
         this.ac = new AbortController();
         this.overviewId = 0;
-        // Inicializar telemetría solo si está disponible
-        try {
-            if (this.context.workspaceState) {
-                this.initTelemetry();
-            }
-        }
-        catch (error) {
-            console.debug('No se pudo inicializar la telemetría');
-        }
     }
-    initTelemetry() {
-        var _a, _b;
+    queryAI(chatPrompt, assistantPrompt, abortController) {
         return __awaiter(this, void 0, void 0, function* () {
-            try {
-                if ((_b = (_a = telemetry === null || telemetry === void 0 ? void 0 : telemetry.commands) === null || _a === void 0 ? void 0 : _a.initTelemetry) === null || _b === void 0 ? void 0 : _b.name) {
-                    yield vscode.commands.executeCommand(telemetry.commands.initTelemetry.name, this.context.workspaceState);
-                }
-            }
-            catch (error) {
-                console.debug('Error inicializando telemetría:', error);
-            }
-        });
-    }
-    // Método seguro para registrar logs
-    logQuery(chatPrompt) {
-        var _a, _b;
-        try {
-            if ((_b = (_a = telemetry === null || telemetry === void 0 ? void 0 : telemetry.commands) === null || _a === void 0 ? void 0 : _a.logTelemetry) === null || _b === void 0 ? void 0 : _b.name) {
-                vscode.commands.executeCommand(telemetry.commands.logTelemetry.name, new telemetry.LoggerEntry("Buddy.query", "Enviando consulta: %s", [chatPrompt.map(msg => `${msg.role}::: ${msg.content}`).join(':::::')])).catch(console.debug); // Manejar errores silenciosamente
-            }
-        }
-        catch (error) {
-            console.debug('Error en telemetría:', error);
-        }
-    }
-    queryAI(chatPrompt, assistantPrompt, abortController, isQuery = false) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.openai && !this.anthropic) {
+            if (!this.anthropic) {
                 yield this.setUpConnection();
             }
             try {
-                // Llamar a logQuery de manera segura
-                if (typeof this.logQuery === 'function') {
-                    this.logQuery(chatPrompt);
-                }
-                const useAnthropicAPI = yield this.context.globalState.get('useAnthropicAPI', false);
-                if (useAnthropicAPI) {
-                    const response = yield this.anthropic.messages.create({
-                        model: "claude-3-5-sonnet-20241022",
-                        messages: chatPrompt.map(msg => ({
-                            role: msg.role === 'assistant' ? 'assistant' : 'user',
-                            content: msg.content
-                        })),
-                        max_tokens: 2000,
-                        temperature: 0.5,
-                        system: chatPrompt[0].content,
-                        timeout: 60000,
-                        signal: abortController.signal
-                    });
-                    return response.content[0].text.trim();
-                }
-                else {
-                    const response = yield this.openai.chat.completions.create({
-                        model: "gpt-4",
-                        messages: chatPrompt,
-                        max_tokens: 4000,
-                        temperature: 0.7
-                    });
-                    return response.choices[0].message.content.trim();
-                }
+                // Asegurarse de que no hay espacios en blanco al final de los mensajes
+                const cleanMessages = chatPrompt.map(msg => ({
+                    role: msg.role === 'assistant' ? 'assistant' : 'user',
+                    content: msg.content.trim() // Eliminar espacios en blanco al principio y final
+                }));
+                const response = yield this.anthropic.messages.create({
+                    model: "claude-3-5-sonnet-20241022",
+                    messages: cleanMessages,
+                    max_tokens: 2000,
+                    temperature: 0.5,
+                    system: cleanMessages[0].content.trim() // Asegurarse de que el mensaje del sistema también está limpio
+                });
+                return response.content[0].text.trim();
             }
             catch (error) {
                 console.error("Error en queryAI:", error);
@@ -122,14 +71,13 @@ class BuddyViewProvider {
     }
     setUpConnection() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.credentials = yield (0, utils_1.initAuth)(this.context);
-            this.openai = new openai_1.OpenAI({
-                apiKey: this.credentials.openai.apiKey
-            });
-            this.anthropic = new anthropic_1.Anthropic({
-                apiKey: this.credentials.anthropic.apiKey
-            });
-            console.log("Conexión establecida");
+            if (!this.credentials) {
+                this.credentials = yield utils_1.initAuth(this.context);
+                this.anthropic = new anthropic_1.Anthropic({
+                    apiKey: this.credentials.anthropic.apiKey
+                });
+                console.log("Conexión establecida con Anthropic");
+            }
         });
     }
     updateChatHistory(prompt, output, editorSelectedText) {
@@ -180,22 +128,20 @@ class BuddyViewProvider {
             const chatPrompt = [
                 {
                     "role": "system",
-                    "content": "Eres un asistente experto que proporciona pistas útiles para resolver problemas de programación básica a estudiantes universitarios."
+                    "content": "Eres un asistente experto que proporciona pistas útiles para resolver problemas de programación básica a estudiantes universitarios sin dar directamente la solución."
                 },
                 {
                     "role": "user",
-                    "content": `Dame una pista para resolver el siguiente problema: ${problemText}`
+                    "content": `Dame una pista breve y diferente cada vez para resolver el siguiente problema: ${problemText}`
                 }
             ];
             try {
-                const hintResponse = yield this.queryAI(chatPrompt, '', new AbortController());
+                const hintResponse = yield this.queryAI(chatPrompt, '', new AbortController(), false, true);
                 console.log('Pista generada:', hintResponse);
                 // Enviar la pista al front-end
                 this.sendMessage({
-                    type: 'addDetail',
-                    value: hintResponse,
-                    detailType: 'hint',
-                    valueHtml: `<p>${hintResponse}</p>`
+                    type: 'hintResponse',
+                    value: hintResponse
                 });
             }
             catch (error) {
@@ -214,15 +160,6 @@ class BuddyViewProvider {
             this.webView.webview.postMessage(message);
         }
     }
-    // Vista web y sus manejadores de eventos
-    resolveWebviewView(webviewView) {
-        this.webView = webviewView;
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this.context.extensionUri]
-        };
-        webviewView.webview.html = this.getHtml(webviewView.webview);
-    }
     preparePrompt(queryType, problemText) {
         return __awaiter(this, void 0, void 0, function* () {
             let chatPrompt = [
@@ -232,15 +169,25 @@ class BuddyViewProvider {
                 }
             ];
             let prompt = '';
-            let assistantPrompt = this.getAssistantPrompts(queryType);
+            let assistantPrompt = '';
             if (queryType === 'askAIConcept') {
-                prompt = `Explica los conceptos específicos del dominio necesarios para entender y resolver el siguiente problema:\n\n${problemText}\n\nPor favor, céntrate en los conceptos clave y fundamentos necesarios.`;
+                prompt = `Analiza el siguiente problema y proporciona solo los conceptos clave necesarios para resolverlo. 
+                     Para cada concepto, proporciona una breve explicación después de dos puntos.
+                     Formato requerido:
+                     Concepto: Explicación clara y concisa
+                     No incluyas introducciones ni conclusiones, solo la lista de conceptos.
+    
+                     Problema:
+                     ${problemText}`;
+                assistantPrompt = ""; // No necesitamos un prompt adicional para el asistente
             }
             else if (queryType === 'askAIUsage') {
-                prompt = `Proporciona una solución paso a paso con ejemplo de código para el siguiente problema:\n\n${problemText}\n\nPor favor, explica cada paso claramente.`;
+                prompt = `Proporciona un ejemplo en pseudocódigo y un ejemplo en código:\n\n${problemText}\n\nPor favor, explica cada paso claramente pero no des la solución directamente.`;
+                assistantPrompt = "Aquí tienes un ejemplo en pseudocódigo:".trim();
             }
             else if (queryType === 'askAIHint') {
-                prompt = `Dame una pista para resolver el siguiente problema:\n\n${problemText}`;
+                prompt = `Una pista que ayude a empezar a resolver el problema:\n\n${problemText}`;
+                assistantPrompt = "Aquí tienes una pista útil:".trim();
             }
             chatPrompt.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": assistantPrompt });
             return [chatPrompt, prompt, assistantPrompt];
@@ -249,11 +196,11 @@ class BuddyViewProvider {
     getAssistantPrompts(queryType) {
         switch (queryType) {
             case "askAIConcept":
-                return "Varios conceptos del problema explicados:\n\n1. ";
+                return "Varios conceptos del problema explicados:\n\n1.".trim();
             case "askAIUsage":
-                return "Aquí tienes un ejemplo de código:\n";
+                return "Aquí tienes un ejemplo en pseudocódigo y otro en código".trim();
             case "askAIHint":
-                return "Aquí tienes una pista útil:\n";
+                return "Aquí tienes una pista para empezar a resolver el problema en código:".trim();
             default:
                 return "";
         }
@@ -261,43 +208,47 @@ class BuddyViewProvider {
     processQueryResponse(queryType, output, prompt, queryId, editorSelectedText) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('Procesando respuesta:', queryType);
-            if (queryType === "askAIOverview") {
-                this.sendMessage({
-                    type: 'addOverview',
-                    value: output,
-                    overviewId: this.overviewId,
-                    valueHtml: markdown_1.Marked.parse(output)
-                });
-                this.previousChat = [
-                    {
-                        "role": "system",
-                        "content": `Soy un asistente experto para estudiantes universitarios`
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    },
-                    {
-                        "role": "assistant",
-                        "content": output
+            // Declarar las variables necesarias
+            let valueHtml = '';
+            const detailType = queryType.replace("askAI", "").toLowerCase();
+            if (queryType === "askAIConcept") {
+                const concepts = output
+                    .split('\n')
+                    .filter(line => line.trim())
+                    .map(concept => concept.trim());
+                valueHtml = '<div class="concepts-container">';
+                concepts.forEach(concept => {
+                    const [mainConcept, explanation] = concept.split(':').map(str => str.trim());
+                    if (mainConcept && explanation) {
+                        valueHtml += `
+                        <div class="concept-card">
+                            <div class="concept-title">
+                                <strong>${mainConcept}</strong>
+                            </div>
+                            <div class="concept-content">
+                                <p>${explanation}</p>
+                            </div>
+                        </div>
+                    `;
                     }
-                ];
+                });
+                valueHtml += '</div>';
             }
             else {
-                const detailType = queryType.replace("askAI", "").toLowerCase();
-                this.sendMessage({
-                    type: 'addDetail',
-                    value: output,
-                    queryId: queryType === "askAIQuery" ? this.overviewId : queryId,
-                    detailType: detailType,
-                    valueHtml: markdown_1.Marked.parse(output)
-                });
-                if (queryType === "askAIQuery") {
-                    this.updateChatHistory(prompt, output, editorSelectedText);
-                }
-                else {
-                    this.previousChat.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": output });
-                }
+                valueHtml = markdown_1.Marked.parse(output);
+            }
+            this.sendMessage({
+                type: 'addDetail',
+                value: output,
+                queryId: queryType === "askAIQuery" ? this.overviewId : queryId,
+                detailType: detailType,
+                valueHtml: valueHtml
+            });
+            if (queryType === "askAIQuery") {
+                this.updateChatHistory(prompt, output, editorSelectedText);
+            }
+            else {
+                this.previousChat.push({ "role": "user", "content": prompt }, { "role": "assistant", "content": output });
             }
         });
     }
@@ -314,7 +265,6 @@ class BuddyViewProvider {
                     let [role, content] = str.split("::: ");
                     return { role, content };
                 });
-                vscode.commands.executeCommand(telemetry.commands.logTelemetry.name, new telemetry.LoggerEntry("Buddy.reaskAI", "Actualizando consulta. prompt: %s, tipo: %s", [chatPrompt.map(msg => `${msg.role}::: ${msg.content}`).join(':::::'), data.queryType]));
                 let output = yield this.queryAI(chatPrompt, this.getAssistantPrompts("askAI" + this.capitalizeFirstLetter(data.queryType)), abortController);
                 this.sendMessage({
                     type: 'redoQuery',
@@ -348,7 +298,10 @@ class BuddyViewProvider {
                     this.ac = new AbortController();
                     console.log('Procesando solicitud:', data.type);
                     const [chatPrompt, prompt, assistantPrompt] = yield this.preparePrompt(data.type, data.problemText);
-                    let output = yield this.queryAI(chatPrompt, assistantPrompt, this.ac);
+                    // Aquí forzamos a utilizar Anthropic en lugar de OpenAI
+                    let output = yield this.queryAI(chatPrompt, assistantPrompt, this.ac, false, // No es una consulta directa desde código
+                    true // Forzar el uso de Anthropic
+                    );
                     yield this.processQueryResponse(data.type, output, prompt);
                 }
                 else if (data.type === 'clearChat') {
@@ -366,8 +319,8 @@ class BuddyViewProvider {
         }));
     }
     getHtml(webview) {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'main.js'));
-        const stylesMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'main.css'));
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'extension', 'media', 'main.js'));
+        const stylesMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'extension', 'media', 'main.css'));
         const stylesHighlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'node_modules', 'highlight.js', 'styles', 'github-dark.css'));
         return `<!DOCTYPE html>
         <html lang="es">
@@ -384,21 +337,37 @@ class BuddyViewProvider {
                 <div class="problem-box">
                     <textarea id="problem-text" class="problem-content" placeholder="Escribe aquí el problema a resolver..."></textarea>
                 </div>
-    
+
                 <div class="button-container">
-                    <button class="buddy-button action-button" id="concept-button">
-                        <span>Conceptos</span>
-                    </button>
-                    <button class="buddy-button action-button" id="usage-button">
-                        <span>Ejemplos</span>
-                    </button>
-                    <button class="buddy-button action-button" id="hint-button">
-                        <span>Pista</span>
-                    </button>
-                    <button class="buddy-button action-button" id="clear-button">
-                        <span>Limpiar Chat</span>
-                    </button>
-                </div>
+    <div class="dropdown">
+        <button class="buddy-button action-button dropdown-toggle" id="ask-button">
+            <span>Tengo una pregunta</span>
+            <span class="dropdown-arrow">▼</span>
+        </button>
+        <div class="dropdown-menu hidden" id="question-options">
+            <button class="dropdown-item" id="concept-button">
+                <span class="item-icon">📚</span>
+                <span>Ver conceptos del problema</span>
+            </button>
+            <button class="dropdown-item" id="usage-button">
+                <span class="item-icon">📝</span>
+                <span>Ver ejemplos de uso</span>
+            </button>
+            <button class="dropdown-item" id="hint-button">
+                <span class="item-icon">💡</span>
+                <span>Dame una pista</span>
+            </button>
+        </div>
+    </div>
+    
+    <button class="buddy-button action-button" id="clear-button">
+        <span class="button-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M3 6h18v2H3V6zm3 4h2v10H6V10zm4 0h2v10h-2V10zm4 0h2v10h-2V10zm4 0h2v10h-2V10z"/>
+            </svg>
+        </span>
+    </button>
+</div>
                 
                 <div id="qa-list" class="flex-1 overflow-y-auto p-4">
                     <!-- Lista de preguntas y respuestas -->
@@ -408,106 +377,143 @@ class BuddyViewProvider {
                     <div class="loader"></div>
                 </div>
             </div>
-    
+
             <script>
-            (function() {
-                const vscode = acquireVsCodeApi();
-                const qaList = document.getElementById('qa-list');
-                
-                function getProblemText() {
-                    return document.getElementById('problem-text').value.trim();
+(function() {
+    const vscode = acquireVsCodeApi();
+    const qaList = document.getElementById('qa-list');
+    
+    function getProblemText() {
+        return document.getElementById('problem-text').value.trim();
+    }
+    
+    // Manejo del dropdown
+    const askButton = document.getElementById('ask-button');
+    const questionOptions = document.getElementById('question-options');
+
+    function closeDropdown() {
+        if (questionOptions) {
+            questionOptions.classList.add('hidden');
+            const arrow = askButton?.querySelector('.dropdown-arrow');
+            if (arrow) {
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+    }
+
+    // Toggle del dropdown
+    askButton?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = questionOptions.classList.contains('hidden');
+        const arrow = askButton.querySelector('.dropdown-arrow');
+        
+        if (isHidden) {
+            questionOptions.classList.remove('hidden');
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            closeDropdown();
+        }
+    });
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!questionOptions?.contains(e.target) && !askButton?.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    // Event listeners para las opciones
+    document.getElementById('concept-button')?.addEventListener('click', () => {
+        const problemText = getProblemText();
+        if (!problemText) {
+            vscode.postMessage({ 
+                type: 'error',
+                message: 'Por favor, escribe un problema antes de solicitar los conceptos.'
+            });
+            return;
+        }
+        vscode.postMessage({ 
+            type: 'askAIConcept',
+            problemText: getProblemText()
+        });
+        document.getElementById('in-progress')?.classList.remove('hidden');
+        closeDropdown();
+    });
+
+    document.getElementById('usage-button')?.addEventListener('click', () => {
+        const problemText = getProblemText();
+        if (!problemText) {
+            vscode.postMessage({ 
+                type: 'error',
+                message: 'Por favor, escribe un problema antes de solicitar ejemplos.'
+            });
+            return;
+        }
+        vscode.postMessage({ 
+            type: 'askAIUsage',
+            problemText: getProblemText()
+        });
+        document.getElementById('in-progress')?.classList.remove('hidden');
+        closeDropdown();
+    });
+
+    document.getElementById('hint-button')?.addEventListener('click', () => {
+        const problemText = getProblemText();
+        if (!problemText) {
+            vscode.postMessage({ 
+                type: 'error',
+                message: 'Por favor, escribe un problema antes de solicitar una pista.'
+            });
+            return;
+        }
+        vscode.postMessage({ 
+            type: 'askAIHint',
+            problemText: getProblemText()
+        });
+        document.getElementById('in-progress')?.classList.remove('hidden');
+        closeDropdown();
+    });
+
+    document.getElementById('clear-button')?.addEventListener('click', () => {
+        if (qaList) {
+            qaList.innerHTML = '';
+            vscode.postMessage({ type: 'clearChat' });
+        }
+    });
+
+    // Event listener para mensajes
+    window.addEventListener('message', event => {
+        const message = event.data;
+        console.log('Mensaje recibido:', message);
+
+        switch (message.type) {
+            case 'updateProblem':
+                document.getElementById('problem-text').value = message.text;
+                break;
+            case 'showProgress':
+                document.getElementById('in-progress')?.classList.remove('hidden');
+                break;
+            case 'hideProgress':
+                document.getElementById('in-progress')?.classList.add('hidden');
+                break;
+            case 'addDetail':
+            case 'addOverview':
+                if (qaList) {
+                    const responseDiv = document.createElement('div');
+                    responseDiv.className = 'buddy-response-card';
+                    responseDiv.innerHTML = message.valueHtml;
+                    qaList.appendChild(responseDiv);
+                    qaList.scrollTo(0, qaList.scrollHeight);
                 }
-                
-                // Event Listeners para los botones
-                document.getElementById('concept-button')?.addEventListener('click', () => {
-                    const problemText = getProblemText();
-                    if (!problemText) {
-                        vscode.postMessage({ 
-                            type: 'error',
-                            message: 'Por favor, escribe un problema antes de solicitar los conceptos.'
-                        });
-                        return;
-                    }
-                    vscode.postMessage({ 
-                        type: 'askAIConcept',
-                        problemText: getProblemText()
-                    });
-                    document.getElementById('in-progress')?.classList.remove('hidden');
-                });
-    
-                document.getElementById('usage-button')?.addEventListener('click', () => {
-                    const problemText = getProblemText();
-                    if (!problemText) {
-                        vscode.postMessage({ 
-                            type: 'error',
-                            message: 'Por favor, escribe un problema antes de solicitar ejemplos.'
-                        });
-                        return;
-                    }
-                    vscode.postMessage({ 
-                        type: 'askAIUsage',
-                        problemText: getProblemText()
-                    });
-                    document.getElementById('in-progress')?.classList.remove('hidden');
-                });
-    
-                document.getElementById('hint-button')?.addEventListener('click', () => {
-                    const problemText = getProblemText();
-                    if (!problemText) {
-                        vscode.postMessage({ 
-                            type: 'error',
-                            message: 'Por favor, escribe un problema antes de solicitar una pista.'
-                        });
-                        return;
-                    }
-                    vscode.postMessage({ 
-                        type: 'askAIHint',
-                        problemText: getProblemText(),
-                        message: 'Aquí tienes una pista para resolver el problema:'
-                    });
-                    document.getElementById('in-progress')?.classList.remove('hidden');
-                });
-    
-                document.getElementById('clear-button')?.addEventListener('click', () => {
-                    document.getElementById('problem-text').value = '';
-                    if (qaList) {
-                        qaList.innerHTML = '';
-                        vscode.postMessage({ type: 'clearChat' });
-                    }
-                });
-    
-                window.addEventListener('message', event => {
-                    const message = event.data;
-                    console.log('Mensaje recibido:', message);
-    
-                    switch (message.type) {
-                        case 'updateProblem':
-                            document.getElementById('problem-text').value = message.text;
-                            break;
-                        case 'showProgress':
-                            document.getElementById('in-progress')?.classList.remove('hidden');
-                            break;
-                        case 'hideProgress':
-                            document.getElementById('in-progress')?.classList.add('hidden');
-                            break;
-                        case 'addDetail':
-                        case 'addOverview':
-                            if (qaList) {
-                                const responseDiv = document.createElement('div');
-                                responseDiv.className = 'buddy-response-card';
-                                responseDiv.innerHTML = message.valueHtml;
-                                qaList.appendChild(responseDiv);
-                                qaList.scrollTo(0, qaList.scrollHeight);
-                            }
-                            document.getElementById('in-progress')?.classList.add('hidden');
-                            break;
-                        case 'error':
-                            alert(message.message);
-                            break;
-                    }
-                });
-            })();
-            </script>
+                document.getElementById('in-progress')?.classList.add('hidden');
+                break;
+            case 'error':
+                alert(message.message);
+                break;
+        }
+    });
+})();
+</script>
         </body>
         </html>`;
     }

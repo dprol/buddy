@@ -332,7 +332,10 @@
     const initializeUIEvents = () => {
         // Botón de limpiar chat
         document.getElementById("clear-button")?.addEventListener("click", () => {
-            list.innerHTML = "";
+            const qaList = document.getElementById("qa-list");
+            if (qaList) {
+                qaList.innerHTML = "";
+            }
             vscode.postMessage({ type: "clearChat" });
         });
         

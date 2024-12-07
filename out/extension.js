@@ -24,7 +24,6 @@ exports.deactivate = exports.activate = void 0;
 // importaciones
 const vscode = require("vscode"); // api principal de VS Code
 const utils_1 = require("./utils"); // utilidades personalizadas
-const tm = require("./telemetry"); // sistema de telemetría
 const buddy_view_provider_1 = require("./buddy-view-provider"); // vista personalizada
 // array para mantener un registro de los recursos desechables
 const disposables = [];
@@ -44,14 +43,6 @@ function activate(context) {
             "modal": true,
             "detail": "- Asistente de IA"
         };
-        // inicialización del sistema de telemetría
-        tm.init(context);
-        // registro de comandos de telemetría
-        for (const cmd of Object.values(Object.assign({}, tm.commands))) {
-            const reg = vscode.commands.registerCommand(cmd.name, cmd.fn);
-            context.subscriptions.push(reg);
-            disposables.push(reg);
-        }
         let createExplanation = vscode.commands.registerCommand('buddy.createExp', () => __awaiter(this, void 0, void 0, function* () {
             try {
                 console.log('1. Iniciando createExp');
@@ -97,8 +88,6 @@ function activate(context) {
                 console.error('Error en createExp:', error);
                 console.error('Stack trace:', error.stack);
                 vscode.window.showErrorMessage(`Error al generar explicación: ${error.message}`);
-                // Registrar en telemetría con más detalles
-                vscode.commands.executeCommand(tm.commands.logTelemetry.name, new tm.LoggerEntry("createExp.error", "Error al generar explicación: %s. Stack: %s", [error.message, error.stack]));
                 // Asegurar que la UI se restaure
                 if (statusMessage) {
                     statusMessage.dispose();
@@ -161,10 +150,6 @@ function activate(context) {
                 enableScripts: true
             }
         }));
-        // registrar los listeners de telemetría
-        tm.listeners.forEach((listener) => {
-            context.subscriptions.push(listener.event(listener.fn));
-        });
     });
 }
 exports.activate = activate;
@@ -175,7 +160,6 @@ exports.activate = activate;
  */
 function deactivate() {
     disposables.forEach((e) => e.dispose());
-    tm.deinit();
 }
 exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map

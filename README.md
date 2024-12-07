@@ -1,12 +1,12 @@
 <div align="center">
 <img src="extension/media/readme.jpg" alt="buddy logo">
-<h1>buddy: Tutor de IA en VScode </h1>
-**buddy es una extensión de VS Code que actúa como asistente de IA diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica. Funciona con GPT-4 & Claude 3.5 Sonnet.**
+<h1>buddy: tu compañero en tus primeros pasos en la programación </h1>
+*buddy* es una extensión de VS Code que actúa como asistente de IA diseñado específicamente para estudiantes universitarios que están aprendiendo programación básica. Funciona con GPT-4 & Claude 3.5 Sonnet.
 </div>
 
-## Características Principales
+## Funcionalidades Principales
 - **Conceptos**
-- **Usos/Ejemplos**  
+- **Usos/Ejemplos**: muestra pseudocódigo en lugar de soluciones 
 - **Pistas**
 - **Integrado en VS Code**: Experiencia fluida dentro de tu entorno de desarrollo
 

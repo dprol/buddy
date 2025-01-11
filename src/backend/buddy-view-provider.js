@@ -197,7 +197,7 @@ class BuddyViewProvider {
         let chatPrompt = [
             {
                 "role": "system",
-                "content": "Soy un asistente experto para estudiantes universitarios"
+                "content": "Soy un asistente experto en programación básica para estudiantes universitarios"
             }
         ];
     
@@ -205,11 +205,7 @@ class BuddyViewProvider {
         let assistantPrompt = '';
     
         if (queryType === 'askAIConcept') {
-            prompt = `Analiza el siguiente problema y proporciona solo los conceptos clave necesarios para resolverlo. 
-                     Para cada concepto, proporciona una breve explicación después de dos puntos.
-                     Formato requerido:
-                     Concepto: Explicación clara y concisa
-                     No incluyas introducciones ni conclusiones, solo la lista de conceptos.
+            prompt = `Deberás proporcionar definiciones breves y precisas de conceptos básicos de programación presentes en el problema cuando el usuario lo solicite, en el lenguaje de programación indicado en el enunciado. Las definiciones tienen que ir acompañadas de un ejemplo relacionado, preferiblemente de código. Solo mostrar el concepto si está relacionado con la programación. 
     
                      Problema:
                      ${problemText}`;
@@ -234,7 +230,7 @@ class BuddyViewProvider {
     getAssistantPrompts(queryType) {
         switch (queryType) {
             case "askAIConcept":
-                return "Varios conceptos del problema explicados:\n\n1.".trim();
+                return "Aquí tienes los conceptos más importantes del problema explicados con un ejemplo:\n\n1.".trim();
             case "askAIUsage":
                 return "Aquí tienes un ejemplo en pseudocódigo y otro en código".trim();
             case "askAIHint":
@@ -405,7 +401,7 @@ class BuddyViewProvider {
                 <div class="button-container">
     <div class="dropdown">
         <button class="buddy-button action-button dropdown-toggle" id="ask-button">
-            <span>Tengo una pregunta</span>
+            <span>Ayuda</span>
             <span class="dropdown-arrow">▼</span>
         </button>
         <div class="dropdown-menu hidden" id="question-options">

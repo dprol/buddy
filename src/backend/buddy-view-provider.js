@@ -1,21 +1,35 @@
 "use strict";
 
-// Imports y configuración inicial
 Object.defineProperty(exports, "__esModule", { value: true });
+
 const vscode = require("vscode");
-const openai_1 = require("openai");
-const anthropic_1 = require("@anthropic-ai/sdk");
-const utils_1 = require("../tests/utils");
-const markdown_1 = require("@ts-stack/markdown");
-const highlight_js_1 = require("highlight.js");
+const { Anthropic } = require("@anthropic-ai/sdk");
+const utils = require('./utils');
+const markdown = require("@ts-stack/markdown");
+const hljs = require("highlight.js");
 
 /**
  * clase para el renderizado de markdown
  */
-class MyRenderer extends markdown_1.Renderer {
+class MyRenderer extends markdown.Renderer {
     code(code, lang, escaped, meta) {
-        const out = highlight_js_1.default.highlight(code, { 'language': "python" }).value;
-        return `\n<pre class='overflow-scroll white-space-pre' style="margin: 1em 0.5em;"><code class="language-python hljs">${out}</code></pre>\n`;
+        // Lista de lenguajes soportados
+        const supportedLanguages = {
+            'python': 'python',
+            'py': 'python',
+            'cpp': 'cpp',
+            'c++': 'cpp',
+            'c': 'c',
+            'java': 'java'
+        };
+
+        // Si no se especifica lenguaje o no está soportado, usar python por defecto
+        const language = supportedLanguages[lang?.toLowerCase()] || 'python';
+        
+        const out = hljs.highlight(code, { 'language': language }).value;
+        return `\n<pre class='overflow-scroll white-space-pre' style="margin: 1em 0.5em;">
+            <code class="language-${language} hljs">${out}</code>
+        </pre>\n`;
     }
 
     list(body, ordered) {
@@ -24,7 +38,7 @@ class MyRenderer extends markdown_1.Renderer {
     }
 }
 
-markdown_1.Marked.setOptions({ renderer: new MyRenderer });
+markdown.Marked.setOptions({ renderer: new MyRenderer() });
 
 class BuddyViewProvider {
     constructor(context) {
@@ -71,7 +85,7 @@ class BuddyViewProvider {
 
     async setUpConnection() {
         if (!this.credentials) {
-            this.credentials = await utils_1.initAuth(this.context);
+            this.credentials = await utils.initAuth(this.context);
             this.anthropic = new anthropic_1.Anthropic({
                 apiKey: this.credentials.anthropic.apiKey
             });

@@ -2,18 +2,15 @@
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "outDir": "out",
-    "rootDir": "src",     // Cambiado de "extension" a "src"
+    "outDir": "../../dist",
+    "rootDir": "..",
     "strict": true,
-    "sourceMap": true,
-    "allowJs": true,
-    "checkJs": false      // Añadido para evitar errores de tipo en JS
+    "esModuleInterop": true
   },
   "include": [
-    "src/**/*"           // Cambiado de "extension/**/*" a "src/**/*"
+    "../frontend/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    ".vscode-test"
+    "../../node_modules"
   ]
 }

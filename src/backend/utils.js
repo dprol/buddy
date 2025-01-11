@@ -82,5 +82,6 @@ module.exports = {
     getFileExtension,
     formatText,
     formatComment,
-    validateChatPayload
+    validateChatPayload,
+    initAuth
 };

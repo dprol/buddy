@@ -3,7 +3,7 @@
 const vscode = require('vscode');
 const indentString = (...args) => import('indent-string').then(m => m.default(...args));
 
-const ANTHROPIC_API_KEY = 'anthropic-api-key';
+const ANTHROPIC_API_KEY = 'sk-ant-api3-x3kx5R1uIq9F1M5AiQ3pnqVJcx9HiB9Uq3_bzH4CUmDUNAMOQZklC-0a1CioxCSMc8B6C1DxkDegXJxkMod1w-2xHbWQAA';
 
 function buildStatusBarItem() {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -11,16 +11,6 @@ function buildStatusBarItem() {
     statusBarItem.tooltip = "Asistente de IA para estudiantes";
     statusBarItem.command = 'buddy.createExp';
     return statusBarItem;
-}
-
-async function setNewAnthropicKey(context) {
-    const key = await vscode.window.showInputBox({
-        prompt: 'Ingrese su clave API de Anthropic',
-        password: true
-    });
-    if (key) {
-        await context.secrets.store(ANTHROPIC_API_KEY, key);
-    }
 }
 
 function getFileExtension(filename) {
@@ -75,13 +65,17 @@ function validateChatPayload(payload) {
     };
 }
 
+async function initAuth(context) {
+    // Aquí retornamos directamente la clave API codificada
+    return { anthropic: { apiKey: ANTHROPIC_API_KEY } };
+}
+
 module.exports = {
     ANTHROPIC_API_KEY,
     buildStatusBarItem,
-    setNewAnthropicKey,
     getFileExtension,
     formatText,
     formatComment,
     validateChatPayload,
-    initAuth
+    initAuth // Exportamos la función initAuth
 };

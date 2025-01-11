@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const openai_1 = require("openai");
 const anthropic_1 = require("@anthropic-ai/sdk");
-const utils_1 = require("./utils");
+const utils_1 = require("../tests/utils");
 const markdown_1 = require("@ts-stack/markdown");
 const highlight_js_1 = require("highlight.js");
 

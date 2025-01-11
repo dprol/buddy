@@ -13,7 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 // importaciones
 const vscode = require("vscode"); // api principal de VS Code
-const utils_1 = require("./utils"); // utilidades personalizadas
+const utils_1 = require("../tests/utils"); // utilidades personalizadas
 const buddy_view_provider_1 = require("./buddy-view-provider"); // vista personalizada
 // array para mantener un registro de los recursos desechables
 const disposables = [];

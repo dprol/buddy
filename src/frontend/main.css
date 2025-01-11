@@ -19,7 +19,23 @@ body {
     background-color: var(--buddy-background);
 }
 
-/* Contenedor principal ajustado */
+#ask-button {
+    font-size: 1.25rem;  /* Texto más grande */
+    font-weight: 500;    /* Un poco más bold */
+    padding: 12px 24px;  /* Más padding para un botón más grande */
+    background-color: #DC1436;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: auto;
+    min-width: 180px;
+    box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25);
+}
+
+/* Contenedor principal */
 .flex.flex-col.h-screen {
     width: 100%;
     max-width: var(--container-width);
@@ -74,79 +90,79 @@ body {
     gap: 0.75rem;
     padding: 0.75rem 0;
     margin-top: 0.5rem;
-    justify-content: flex-start; /* Alinea los botones a la izquierda */
+    justify-content: flex-start;
 }
 
 /* Dropdown contenedor */
 .dropdown {
     position: relative;
-    width: auto; /* En lugar de flex-grow: 1 */
+    width: auto;
 }
 
-/* Botón principal "Tengo una pregunta" */
+/* Botón principal "Ayuda" */
 .dropdown-toggle {
-    min-width: 180px; /* Ancho mínimo para el botón */
-    max-width: 250px; /* Ancho máximo para el botón */
-    height: 44px !important;
+    min-width: 180px;
+    max-width: 250px;
+    height: 44px;
     display: flex;
     align-items: center;
-    justify-content: space-between !important;
-    padding: 0 1.25rem !important;
-    background-color: var(--buddy-primary) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 8px !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25) !important;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    background-color: var(--buddy-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25);
     white-space: nowrap;
 }
 
 /* Menú dropdown */
 .dropdown-menu {
     position: absolute;
-    top: calc(100% + 4px);
+    top: 100%;
     left: 0;
-    min-width: 100%; /* Al menos tan ancho como el botón */
-    width: max-content; /* Se ajusta al contenido si es más largo */
-    background-color: white;
-    border: 1px solid var(--buddy-border);
+    width: 100%;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    padding: 0.25rem;
-    animation: fadeIn 0.2s ease-out;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: 2px;
+    z-index: 1000;      /* Mayor z-index para estar sobre el loader */
+    overflow: hidden;
 }
+
 
 /* Elementos del dropdown */
 .dropdown-item {
-    width: 100%;
-    height: 40px;
+    padding: 8px 16px;  /* Reducir padding vertical */
     display: flex;
     align-items: center;
-    padding: 0 1rem;
+    gap: 8px;          /* Espacio entre icono y texto */
+    width: 100%;
     border: none;
     background: none;
-    color: var(--buddy-text);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 6px;
-    white-space: nowrap;
+    color: #1A2837;
+    font-size: 0.95rem;
+    margin: 0;         /* Eliminar márgenes */
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Separador sutil */
 }
 
+/* Hover effect */
 .dropdown-item:hover {
-    background-color: var(--buddy-accent);
+    background-color: rgba(220, 20, 54, 0.05);
 }
 
 .dropdown-toggle:hover {
-    background-color: var(--buddy-secondary) !important;
+    background-color: var(--buddy-secondary);
     transform: translateY(-2px);
-    box-shadow: 0 6px 10px rgba(220, 20, 54, 0.3) !important;
+    box-shadow: 0 6px 10px rgba(220, 20, 54, 0.3);
 }
 
 .dropdown-toggle:active {
-    transform: translateY(1px) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .dropdown-arrow {
@@ -190,28 +206,33 @@ body {
     font-size: 0.95rem;
 }
 
-.dropdown-item:hover {
-    background-color: var(--buddy-accent);
+/* Alineación de los iconos */
+.item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: #DC1436;
 }
 
-.dropdown-item .item-icon {
-    font-size: 1.2rem;
-    width: 1.5rem;
-    text-align: center;
-    color: var(--buddy-primary);
+/* Ajustar el tamaño de los SVG */
+.item-icon svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* Botón de limpiar */
 #clear-button {
-    width: 44px !important;
-    height: 44px !important;
-    padding: 0 !important;
+    width: 44px;
+    height: 44px;
+    padding: 0;
     flex: 0 0 auto;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 8px !important;
-    margin-left: auto; /* Empuja el botón de limpiar a la derecha */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-left: auto;
 }
 
 #clear-button:hover {
@@ -232,6 +253,8 @@ body {
 
 /* Lista de respuestas */
 #qa-list {
+    display: flex;
+    flex-direction: column-reverse;  /* Esto hace que los elementos se apilen desde abajo */
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -239,12 +262,18 @@ body {
     border-top: 1px solid var(--buddy-border);
 }
 
+/* Eliminar el borde del último elemento */
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
 /* Tarjetas de respuesta */
 .buddy-response-card {
-    padding: 0 !important;
-    margin-bottom: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
     width: 100%;
-    max-width: 100%;
     box-sizing: border-box;
 }
 
@@ -257,6 +286,18 @@ body {
     max-width: 100%;
     box-sizing: border-box;
     padding: 0;
+}
+
+.usage-content {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 8px 0;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: pre-wrap;
 }
 
 /* Ajuste de tarjetas de concepto */
@@ -341,35 +382,49 @@ concept-header {
 /* Loader */
 #in-progress {
     text-align: center;
-    width: 100%;
-    padding: 1rem 0;
+    padding: 2px 0;
+    margin: 2px 0;
     color: var(--buddy-primary);
-    margin: 1rem 0;
+    height: 20px;
+    position: relative;  /* Cambiar a relative */
+    z-index: 1;         /* Menor z-index que el dropdown */
 }
 
 .loader {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto;
-    border: 3px solid var(--buddy-primary);
-    border-radius: 50%;
-    border-top-color: transparent;
-    animation: spin 1s linear infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px; 
+    height: 16px;
+    pointer-events: none;
 }
 
-.loader:before {
-    content: "";
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    left: 0;
-    top: 0;
-    border: 4px solid transparent;
-    border-color: var(--buddy-primary) var(--buddy-primary) transparent transparent;
+.loader div {
+    width: 6px; 
+    height: 6px; 
+    background: var(--buddy-primary);
     border-radius: 50%;
-    box-sizing: border-box;
-    animation: rotate 3s ease-in-out infinite;
-    transform: rotate(-200deg);
+    animation: bounce 0.5s cubic-bezier(0.19, 0.57, 0.3, 0.98) infinite;
+    opacity: 0.6;
+}
+
+.loader div:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.loader div:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
 }
 
 /* Código y bloques de código */

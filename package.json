@@ -23,8 +23,9 @@
         "asistente"
     ],
     "activationEvents": [
-        "onStartupFinished"
-    ],
+    "onStartupFinished",
+    "onView:buddy-vscode-plugin.view"
+],
     "main": "./src/backend/extension.js",
     "contributes": {
         "commands": [
@@ -34,19 +35,9 @@
                 "icon": "$(hubot)"
             },
             {
-                "command": "buddy.updateOpenAIKey",
-                "title": "Actualizar Clave API de OpenAI",
-                "icon": "$(key)"
-            },
-            {
                 "command": "buddy.updateAnthropicKey",
                 "title": "Actualizar Clave API de Anthropic",
                 "icon": "$(key)"
-            },
-            {
-                "command": "buddy.removeOpenAIKey",
-                "title": "Eliminar Clave API de OpenAI",
-                "icon": "$(trash)"
             },
             {
                 "command": "buddy.removeAnthropicKey",
@@ -60,21 +51,10 @@
                 "buddy.aiProvider": {
                     "type": "string",
                     "enum": [
-                        "openai",
                         "anthropic"
                     ],
                     "default": "anthropic",
                     "description": "Proveedor de IA a utilizar"
-                },
-                "buddy.openai.org": {
-                    "type": "string",
-                    "default": null,
-                    "markdownDescription": "ID de organización de OpenAI"
-                },
-                "buddy.openai.model": {
-                    "type": "string",
-                    "default": "gpt-4",
-                    "description": "Modelo de OpenAI a utilizar"
                 },
                 "buddy.anthropic.model": {
                     "type": "string",
@@ -122,38 +102,34 @@
             ]
         }
     },
-        "scripts": {
-            "vscode:prepublish": "npm run compile",
-            "compile": "tsc --project src/config/tsconfig.json",
-            "watch": "tsc -watch -p ./",
-            "pretest": "npm run compile && npm run lint",
-            "lint": "eslint src --ext ts",
-            "test": "node ./src/test/runTest.js",
-            "test:mocha": "mocha src/test/suite/**/*.test.js --ui tdd",
-            "test": "DISPLAY=:0 xvfb-run -a npm run test:raw",
-            "test:raw": "node ./src/test/runTest.js"
-        },
-        "devDependencies": {
-            "@types/glob": "^8.0.0",
-            "@types/mocha": "^10.0.10",
-            "@types/node": "^16.18.119",
-            "@types/vscode": "^1.95.0",
-            "@typescript-eslint/eslint-plugin": "^5.45.0",
-            "@typescript-eslint/parser": "^5.45.0",
-            "@vscode/test-electron": "^2.4.1",
-            "eslint": "^8.28.0",
-            "glob": "^8.0.3",
-            "mocha": "^10.1.0",
-            "typescript": "^4.9.5"
-        },
-    
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc --project src/config/tsconfig.json",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "DISPLAY=:0 xvfb-run -a npm run test:raw",
+        "test:raw": "node ./src/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/glob": "^8.0.0",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^16.18.119",
+        "@types/vscode": "^1.95.0",
+        "@typescript-eslint/eslint-plugin": "^5.45.0",
+        "@typescript-eslint/parser": "^5.45.0",
+        "@vscode/test-electron": "^2.4.1",
+        "eslint": "^8.28.0",
+        "glob": "^8.0.3",
+        "mocha": "^10.1.0",
+        "typescript": "^4.9.5"
+    },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.18.0",
         "@ts-stack/markdown": "^1.0.0",
         "highlight.js": "^11.10.0",
         "indent-string": "^5.0.0",
-        "json5": "^2.2.3",
-        "openai": "^4.73.0"
+        "json5": "^2.2.3"
     },
     "author": "Daniel Prol",
     "license": "MIT",
@@ -161,8 +137,6 @@
         "url": "https://github.com/dprol/buddy/issues"
     },
     "homepage": "https://github.com/dprol/buddy#readme",
-    "pricing": "Free",
-    "name": "buddy",
     "publisher": "dprol",
     "preview": true,
     "galleryBanner": {

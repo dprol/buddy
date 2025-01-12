@@ -368,29 +368,18 @@ class BuddyViewProvider {
     
         webviewView.webview.onDidReceiveMessage(async (data) => {
             console.log('Mensaje recibido:', data);
-    
             try {
                 if (['askAIConcept', 'askAIUsage', 'askAIHint', 'askAINextStep'].includes(data.type)) {
                     this.ac = new AbortController();
-                    console.log('Procesando solicitud:', data.type);
-                    
                     const [chatPrompt, prompt, assistantPrompt] = await this.preparePrompt(
                         data.type,
                         data.problemText
                     );
     
-                    let output = await this.queryAI(
-                        chatPrompt,
-                        assistantPrompt,
-                        this.ac,
-                        false,
-                        true
-                    );
-    
+                    let output = await this.queryAI(chatPrompt, assistantPrompt, this.ac);
                     await this.processQueryResponse(data.type, output, prompt);
                 } else if (data.type === 'clearChat') {
                     this.previousChat = [];
-                    console.log('Chat limpiado');
                 }
             } catch (error) {
                 console.error('Error procesando mensaje:', error);
@@ -403,262 +392,103 @@ class BuddyViewProvider {
     }
 
     getHtml(webview) {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'src', 'frontend', 'main.js'));
         const stylesMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'src', 'frontend', 'main.css'));
         const stylesHighlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'node_modules', 'highlight.js', 'styles', 'github-dark.css'));
-
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'src', 'frontend', 'main.js'));
+    
         return `<!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link href="${stylesHighlightUri}" rel="stylesheet">
-            <link href="${stylesMainUri}" rel="stylesheet">
-            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-            <title>Buddy</title>
-        </head>
-        <body>
-            <div class="flex flex-col h-screen">
-                <div class="problem-box">
-                    <textarea id="problem-text" class="problem-content" placeholder="Escribe aquí el problema a resolver..."></textarea>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'unsafe-inline' 'unsafe-eval' ${webview.cspSource} https://cdn.jsdelivr.net;">
+                <link href="${stylesHighlightUri}" rel="stylesheet">
+                <link href="${stylesMainUri}" rel="stylesheet">
+                <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+                <title>Buddy</title>
+            </head>
+            <body>
+                <div class="flex flex-col h-screen">
+                    <div class="problem-box">
+                        <textarea id="problem-text" class="problem-content" placeholder="Escribe aquí el problema a resolver..."></textarea>
+                    </div>
+    
+                    <!-- Loader fuera del dropdown -->
+                    <div id="in-progress" class="hidden">
+                        <div class="loader">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                    </div>
+    
+                    <div class="button-container">
+                        <div class="dropdown">
+                            <button class="buddy-button action-button dropdown-toggle" id="ask-button">
+                                <span>Ayuda</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </button>
+                            <div class="dropdown-menu hidden" id="question-options">
+                                <button class="dropdown-item" id="concept-button">
+                                    <span class="item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                                            <path d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Z"/>
+                                        </svg>
+                                    </span>
+                                    <span>Ver conceptos clave</span>
+                                </button>
+                                <button class="dropdown-item" id="usage-button">
+                                    <span class="item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                                            <path d="M200,168a32.06,32.06,0,0,0-31,24H72a32,32,0,0,1,0-64h96a40,40,0,0,0,0-80H72a8,8,0,0,0,0,16h96a24,24,0,0,1,0,48H72a48,48,0,0,0,0,96h97a32,32,0,1,0,31-40Z"/>
+                                        </svg>
+                                    </span>
+                                    <span>Ver pseudocódigo y diagrama</span>
+                                </button>
+                                <button class="dropdown-item" id="hint-button">
+                                    <span class="item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                                            <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm39.1,131.79a47.84,47.84,0,0,0,0-55.58l28.5-28.49a87.83,87.83,0,0,1,0,112.56Z"/>
+                                        </svg>
+                                    </span>
+                                    <span>Recibir una pista</span>
+                                </button>
+                                <button class="dropdown-item" id="next-step-button">
+                                    <span class="item-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                                            <path d="M200,32a8,8,0,0,0-8,8v69.23L72.43,34.45A15.95,15.95,0,0,0,48,47.88V208.12a16,16,0,0,0,24.43,13.43L192,146.77V216a8,8,0,0,0,16,0V40A8,8,0,0,0,200,32Z"/>
+                                        </svg>
+                                    </span>
+                                    <span>Ver próximo paso</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button class="buddy-button action-button" id="clear-button">
+                            <span class="button-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <path 
+                                        stroke="currentColor" 
+                                        stroke-linecap="round" 
+                                        stroke-linejoin="round" 
+                                        stroke-width="1.5" 
+                                        d="m19.455 9-.005-.016m0 0A8.5 8.5 0 1 0 11.5 20.5c2.342 0 4.204-.69 6-2.48 1.011-1.007 1.675-2.023 2.062-3.145m-.113-5.89L19.5 9l1-3m-1.05 2.984-2.95-.922"
+                                    />
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                    
+                    <div id="qa-list" class="flex-1 overflow-y-auto p-4">
+                        <!-- Lista de preguntas y respuestas -->
+                    </div>
                 </div>
-
-                <div class="button-container">
-    <div class="dropdown">
-        <button class="buddy-button action-button dropdown-toggle" id="ask-button">
-    <span>Ayuda</span>
-    <span class="dropdown-arrow">▼</span>
-</button>
-<div class="dropdown-menu hidden" id="question-options">
-    <div class="loader">
-        <div></div>
-    </div>
-</div>
-                </div>
-        <div class="dropdown-menu hidden" id="question-options">
-    <button class="dropdown-item" id="concept-button">
-        <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
-                <path d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Z"/>
-            </svg>
-        </span>
-        <span>Ver conceptos clave</span>
-    </button>
-    <button class="dropdown-item" id="usage-button">
-        <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
-                <path d="M200,168a32.06,32.06,0,0,0-31,24H72a32,32,0,0,1,0-64h96a40,40,0,0,0,0-80H72a8,8,0,0,0,0,16h96a24,24,0,0,1,0,48H72a48,48,0,0,0,0,96h97a32,32,0,1,0,31-40Z"/>
-            </svg>
-        </span>
-        <span>Ver pseudocódigo y diagrama</span>
-    </button>
-    <button class="dropdown-item" id="hint-button">
-    <span class="item-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256">
-            <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z"></path>
-        </svg>
-    </span>
-    <span>Recibir una pista</span>
-</button>
-    <button class="dropdown-item" id="next-step-button">
-        <span class="item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
-                <path d="M200,32a8,8,0,0,0-8,8v69.23L72.43,34.45A15.95,15.95,0,0,0,48,47.88V208.12a16,16,0,0,0,24.43,13.43L192,146.77V216a8,8,0,0,0,16,0V40A8,8,0,0,0,200,32Z"/>
-            </svg>
-        </span>
-        <span>Ver próximo paso</span>
-    </button>
-</div>
-    </div>
     
-    <button class="buddy-button action-button" id="clear-button">
-    <span class="button-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path 
-                stroke="currentColor" 
-                stroke-linecap="round" 
-                stroke-linejoin="round" 
-                stroke-width="1.5" 
-                d="m19.455 9-.005-.016m0 0A8.5 8.5 0 1 0 11.5 20.5c2.342 0 4.204-.69 6-2.48 1.011-1.007 1.675-2.023 2.062-3.145m-.113-5.89L19.5 9l1-3m-1.05 2.984-2.95-.922"
-            />
-        </svg>
-    </span>
-</button>
-</div>
-                
-                <div id="qa-list" class="flex-1 overflow-y-auto p-4">
-                    <!-- Lista de preguntas y respuestas -->
-                </div>
-            </div>
-
-            <script>
-(function() {
-    const vscode = acquireVsCodeApi();
-    const qaList = document.getElementById('qa-list');
-    
-    function getProblemText() {
-        return document.getElementById('problem-text').value.trim();
-    }
-    
-    // Manejo del dropdown
-    const askButton = document.getElementById('ask-button');
-    const questionOptions = document.getElementById('question-options');
-
-    function closeDropdown() {
-        if (questionOptions) {
-            questionOptions.classList.add('hidden');
-            const arrow = askButton?.querySelector('.dropdown-arrow');
-            if (arrow) {
-                arrow.style.transform = 'rotate(0deg)';
-            }
-        }
-    }
-
-    // Toggle del dropdown
-    askButton?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isHidden = questionOptions.classList.contains('hidden');
-    const arrow = askButton.querySelector('.dropdown-arrow');
-    
-    // Ocultar el loader si está visible
-    document.getElementById("in-progress")?.classList.add('hidden');
-    
-    if (isHidden) {
-        questionOptions.classList.remove('hidden');
-        arrow.style.transform = 'rotate(180deg)';
-    } else {
-        closeDropdown();
-    }
-});
-
-// Modificar cuando mostramos el loader
-function showLoader() {
-    const loader = document.getElementById("in-progress");
-    if (loader) {
-        loader.classList.remove('hidden');
-        // Asegurarnos de que el dropdown se oculte
-        document.getElementById("question-options")?.classList.add('hidden');
+                <script>
+                </script>
+            </body>
+            </html>`;
     }
 }
 
-
-    // Cerrar dropdown al hacer clic fuera
-    document.addEventListener('click', (e) => {
-        if (!questionOptions?.contains(e.target) && !askButton?.contains(e.target)) {
-            closeDropdown();
-        }
-    });
-
-    // Event listeners para las opciones
-    document.getElementById('concept-button')?.addEventListener('click', () => {
-        const problemText = getProblemText();
-        if (!problemText) {
-            vscode.postMessage({ 
-                type: 'error',
-                message: 'Por favor, escribe un problema antes de solicitar los conceptos.'
-            });
-            return;
-        }
-        vscode.postMessage({ 
-            type: 'askAIConcept',
-            problemText: getProblemText()
-        });
-        document.getElementById('in-progress')?.classList.remove('hidden');
-        closeDropdown();
-    });
-
-    document.getElementById('usage-button')?.addEventListener('click', () => {
-        const problemText = getProblemText();
-        if (!problemText) {
-            vscode.postMessage({ 
-                type: 'error',
-                message: 'Por favor, escribe un problema antes de solicitar ejemplos.'
-            });
-            return;
-        }
-        vscode.postMessage({ 
-            type: 'askAIUsage',
-            problemText: getProblemText()
-        });
-        document.getElementById('in-progress')?.classList.remove('hidden');
-        closeDropdown();
-    });
-
-    document.getElementById('hint-button')?.addEventListener('click', () => {
-        const problemText = getProblemText();
-        if (!problemText) {
-            vscode.postMessage({ 
-                type: 'error',
-                message: 'Por favor, escribe un problema antes de solicitar una pista.'
-            });
-            return;
-        }
-        vscode.postMessage({ 
-            type: 'askAIHint',
-            problemText: getProblemText()
-        });
-        document.getElementById('in-progress')?.classList.remove('hidden');
-        closeDropdown();
-    });
-    document.getElementById('next-step-button')?.addEventListener('click', () => {
-    vscode.postMessage({ 
-        type: 'askAINextStep',
-        problemText: '' // El código se obtendrá del editor en el backend
-    });
-    document.getElementById('in-progress')?.classList.remove('hidden');
-    closeDropdown();
-});
-
-    document.getElementById('clear-button')?.addEventListener('click', () => {
-        if (qaList) {
-            qaList.innerHTML = '';
-            vscode.postMessage({ type: 'clearChat' });
-        }
-    });
-
-    // Event listener para mensajes
-    window.addEventListener('message', event => {
-    const message = event.data;
-    console.log('Mensaje recibido:', message);
-    
-    switch (message.type) {
-        case 'updateProblem':
-            document.getElementById('problem-text').value = message.text;
-            break;
-            
-        case 'showProgress':
-            const inProgress = document.getElementById('in-progress');
-            if (inProgress) {
-                inProgress.classList.remove('hidden');
-                // Asegurar que el dropdown se oculte
-                document.getElementById('question-options')?.classList.add('hidden');
-            }
-            break;
-            
-        case 'hideProgress':
-            document.getElementById('in-progress')?.classList.add('hidden');
-            break;
-            case 'addDetail':
-            case 'addOverview':
-                if (qaList) {
-                    const responseDiv = document.createElement('div');
-                    responseDiv.className = 'buddy-response-card';
-                    responseDiv.innerHTML = message.valueHtml;
-                    qaList.appendChild(responseDiv);
-                    qaList.scrollTo(0, qaList.scrollHeight);
-                }
-                document.getElementById('in-progress')?.classList.add('hidden');
-                break;
-            case 'error':
-                alert(message.message);
-                break;
-        }
-    });
-})();
-</script>
-        </body>
-        </html>`;
-    }
-}
-
-exports.default = BuddyViewProvider;
+module.exports = BuddyViewProvider;

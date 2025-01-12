@@ -30,11 +30,6 @@
     "contributes": {
         "commands": [
             {
-                "command": "buddy.createExp",
-                "title": "Crear Explicación",
-                "icon": "$(hubot)"
-            },
-            {
                 "command": "buddy.updateAnthropicKey",
                 "title": "Actualizar Clave API de Anthropic",
                 "icon": "$(key)"
@@ -76,13 +71,6 @@
                 }
             }
         },
-        "keybindings": [
-            {
-                "command": "buddy.createExp",
-                "key": "alt+b",
-                "when": "editorTextFocus"
-            }
-        ],
         "viewsContainers": {
             "activitybar": [
                 {

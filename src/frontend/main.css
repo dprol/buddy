@@ -96,7 +96,7 @@ body {
 /* Dropdown contenedor */
 .dropdown {
     position: relative;
-    width: auto;
+    display: inline-block;
 }
 
 /* Botón principal "Ayuda" */
@@ -121,37 +121,41 @@ body {
 /* Menú dropdown */
 .dropdown-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     left: 0;
-    width: 100%;
-    background: white;
-    border: 1px solid rgba(0,0,0,0.1);
+    min-width: 100%;
+    background-color: white;
+    border: 1px solid var(--buddy-border);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-top: 2px;
-    z-index: 1000;      /* Mayor z-index para estar sobre el loader */
-    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 0.5rem;
+    opacity: 0; /* Inicialmente oculto */
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
+dropdown-menu:not(.hidden) {
+    opacity: 1; /* Mostrar el menú */
+    visibility: visible;
+}
 
 /* Elementos del dropdown */
 .dropdown-item {
-    padding: 8px 16px;  /* Reducir padding vertical */
     display: flex;
     align-items: center;
-    gap: 8px;          /* Espacio entre icono y texto */
+    gap: 8px;
+    padding: 8px 12px;
     width: 100%;
     border: none;
     background: none;
-    color: #1A2837;
-    font-size: 0.95rem;
-    margin: 0;         /* Eliminar márgenes */
-    border-bottom: 1px solid rgba(0,0,0,0.05); /* Separador sutil */
+    cursor: pointer;
+    color: var(--buddy-text);
 }
 
-/* Hover effect */
+/* Hover efecto para las opciones */
 .dropdown-item:hover {
-    background-color: rgba(220, 20, 54, 0.05);
+    background-color: var(--buddy-accent);
 }
 
 .dropdown-toggle:hover {
@@ -170,49 +174,19 @@ body {
     transition: transform 0.2s ease;
 }
 
-.dropdown-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
-    background-color: white;
-    border: 1px solid var(--buddy-border);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    overflow: hidden;
-    animation: fadeIn 0.2s ease-out;
-    padding: 0.5rem 0;
-}
-
 .dropdown-menu li {
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    width: 100%;
-    border: none;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-    color: var(--buddy-text);
-    transition: all 0.2s ease;
-    font-size: 0.95rem;
+.dropdown-menu:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Alineación de los iconos */
 .item-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
     color: #DC1436;
 }
 

@@ -5,9 +5,6 @@
     const list = document.getElementById("qa-list");
     let collapseId = 0;
     let detailId = 0;
-    // Configurar el contenedor para orden inverso
-    list.style.display = 'flex';
-    list.style.flexDirection = 'column-reverse';
 
     // Iconos personalizados
     const userIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
@@ -73,10 +70,10 @@
                                         <span>Buddy: Pista</span>
                                     </div>
                                     <div class="buddy-content">${message.value}</div>`;
-                                    list.insertBefore(hintDiv, list.firstChild);
-                                    list.scrollTo(0, 0); // Scroll al inicio en lugar de al final
-                                    document.getElementById('in-progress')?.classList.add('hidden');
-                                    break;
+                list.appendChild(hintDiv);
+                list.scrollTo(0, list.scrollHeight);
+                document.getElementById('in-progress')?.classList.add('hidden');
+                break;
         }
     });
 
@@ -154,7 +151,7 @@
                 const processedPrompt = message.prompt.replace(/"/g, '&quot;');
                 const hline = message.addHLine ? "<hr/>" : "";
                 
-                list.insertAdjacentHTML('afterbegin',
+                list.insertAdjacentHTML('beforeend', 
                     `<div class="buddy-card">
                         ${hline}
                         <div class="font-bold mb-2 flex items-center">
@@ -169,7 +166,7 @@
                     </div>`);
 
                 document.getElementById("in-progress")?.classList?.remove("hidden");
-                list.scrollTo(0, 0);
+                list.scrollTo(0, list.scrollHeight);
                 document.getElementById(`query-refresh-${message.overviewId}`)?.addEventListener("click", refreshHandler);
                 break;
 
@@ -178,8 +175,8 @@
                 const processedCode = message.code.replace(/"/g, '&quot;');
                 const processedCodePrompt = message.prompt.replace(/"/g, '&quot;');
                 
-                list.insertAdjacentHTML('afterbegin',
-        `<div class="buddy-card">
+                list.insertAdjacentHTML('beforeend', 
+                    `<div class="buddy-card">
                         <hr>
                         <div class="font-bold mb-2 flex items-center">
                             ${userIcon}
@@ -194,7 +191,7 @@
                     </div>`);
 
                 document.getElementById("in-progress")?.classList?.remove("hidden");
-                list.scrollTo(0, 0);
+                list.scrollTo(0, list.scrollHeight);
                 document.getElementById(`overview-refresh-${message.overviewId}`)?.addEventListener("click", refreshHandler);
                 break;
 
@@ -261,7 +258,7 @@
                 
                 detailId++;
                 collapseId++;
-                list.scrollTo(0, 0);
+                list.scrollTo(0, list.scrollHeight);
                 break;
 
             case "redoQuery":

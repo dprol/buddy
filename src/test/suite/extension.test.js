@@ -24,10 +24,7 @@ suite("Buddy Extension Test Suite", function() {
         
         // Verificar comandos específicos
         const expectedCommands = [
-            'buddy.createExp',
-            'buddy.updateOpenAIKey',
             'buddy.updateAnthropicKey',
-            'buddy.removeOpenAIKey',
             'buddy.removeAnthropicKey'
         ];
 
@@ -42,14 +39,5 @@ suite("Buddy Extension Test Suite", function() {
     test("Should load extension settings", function() {
         const config = vscode.workspace.getConfiguration('buddy');
         assert.ok(config, 'Configuration should be available');
-    });
-
-    test("Should handle empty queries", async function() {
-        try {
-            await vscode.commands.executeCommand('buddy.createExp');
-            assert.fail('Should reject empty queries');
-        } catch (err) {
-            assert.ok(err, 'Should throw an error for empty queries');
-        }
     });
 });

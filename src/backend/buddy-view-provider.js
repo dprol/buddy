@@ -6,6 +6,9 @@ const { Anthropic } = require("@anthropic-ai/sdk");
 const utils = require("./utils");
 const { Marked, Renderer } = require("@ts-stack/markdown");
 const hljs = require("highlight.js");
+const React = require('react');
+const ReactDOM = require('react-dom');
+const ConceptSlider = require('../componentes/ConceptSlider');
 
 /**
  * Clase para renderizar markdown con soporte de resaltado de sintaxis.
@@ -110,6 +113,7 @@ class BuddyViewProvider {
     }
 
     async sendApiRequestWithCode(selectedText, queryType, abortController, overviewRef = '', queryId = null, nlPrompt = '') {
+        showLoader();
         console.log('Iniciando petición API:', queryType);
         
         const editor = vscode.window.activeTextEditor;
@@ -401,7 +405,7 @@ class BuddyViewProvider {
             prompt = `Proporciona una explicación clara y concisa de la solución al siguiente problema, usando fragmentos de código para ilustrar los conceptos clave. No introduzcas limítate a poner bullets. La solución debe ser en el lenguaje especificado:\n\n${problemText}`;
             assistantPrompt = "Aquí tienes la explicación de la solución:";
         } else if (queryType === 'askAIFollowUp') {
-            prompt = `Genera exactamente 3 preguntas de seguimiento educativas relacionadas con este problema. Para cada pregunta, proporciona también una respuesta detallada. Usa el siguiente formato exacto para cada par de pregunta y respuesta:
+            prompt = `Genera exactamente 3 preguntas de seguimiento educativas relacionadas con este problema ${problemText}. Para cada pregunta, proporciona también una respuesta detallada. Usa el siguiente formato exacto para cada par de pregunta y respuesta:
     
     Q1: [Primera pregunta]
     A1: [Respuesta a la primera pregunta]
@@ -411,7 +415,7 @@ class BuddyViewProvider {
     A3: [Respuesta a la tercera pregunta]
     
     El problema es:\n\n${problemText}`;
-            assistantPrompt = "Aquí tienes las preguntas de seguimiento:";
+            assistantPrompt = "Aquí tienes las preguntas de seguimiento relacionadas con el problema:";
         }
     
         chatPrompt.push(
@@ -444,34 +448,46 @@ class BuddyViewProvider {
         const detailType = queryType.replace("askAI", "").toLowerCase();
         
         if (queryType === "askAIConcept") {
+            console.log('Output original:', output); // Añadir este log
+        
             const concepts = output
                 .split('\n')
                 .filter(line => line.trim())
-                .map(concept => concept.trim());
+                .map(concept => {
+                    console.log('Procesando línea:', concept); // Añadir este log
+                    const [mainConcept, explanation] = concept.split(':').map(str => str.trim());
+                    console.log('Concepto procesado:', { mainConcept, explanation }); // Añadir este log
+                    return {
+                        mainConcept,
+                        explanation
+                    };
+                })
+                .filter(concept => concept.mainConcept && concept.explanation);
         
+            console.log('Conceptos finales:', concepts); // Añadir este log
+        
+            const sliderId = `slider-${Date.now()}`;
+            
             valueHtml = `
-                <div class="concepts-container">
+                <div class="concepts-container" id="${sliderId}">
                     <div class="concepts-slider">
-                        ${concepts.map((concept, index) => {
-                            const [mainConcept, explanation] = concept.split(':').map(str => str.trim());
-                            if (mainConcept && explanation) {
-                                return `
-                                    <div class="concept-card" id="concept-${index}">
-                                        <div class="concept-title">
-                                            <strong>${mainConcept}</strong>
-                                        </div>
-                                        <div class="concept-content">
-                                            <p>${explanation}</p>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                            return '';
-                        }).join('')}
+                        ${concepts.map((concept, index) => `
+                            <div class="concept-card ${index === 0 ? 'active' : ''}" data-index="${index}">
+                                <h3 class="concept-title">${concept.mainConcept}</h3>
+                                <p class="concept-content">${concept.explanation}</p>
+                            </div>
+                        `).join('')}
                     </div>
                     <div class="concepts-navigation">
-                        <button class="concept-nav-button prev" onclick="previousConcept()">←</button>
-                        <button class="concept-nav-button next" onclick="nextConcept()">→</button>
+                        <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
+                        <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
+                    </div>
+                    <div class="concepts-indicators">
+                        ${concepts.map((_, index) => `
+                            <button class="concept-indicator ${index === 0 ? 'active' : ''}"
+                                    data-index="${index}"
+                                    onclick="goToSlide('${sliderId}', ${index})"></button>
+                        `).join('')}
                     </div>
                 </div>
             `;
@@ -590,18 +606,67 @@ class BuddyViewProvider {
         const stylesMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'src', 'frontend', 'main.css'));
         const stylesHighlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'node_modules', 'highlight.js', 'styles', 'github-dark.css'));
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'src', 'frontend', 'main.js'));
-    
+
         return `<!DOCTYPE html>
-            <html lang="es">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'unsafe-inline' 'unsafe-eval' ${webview.cspSource} https://cdn.jsdelivr.net;">
-                <link href="${stylesHighlightUri}" rel="stylesheet">
-                <link href="${stylesMainUri}" rel="stylesheet">
-                <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-                <title>Buddy</title>
-            </head>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'unsafe-inline' 'unsafe-eval' ${webview.cspSource} https://cdn.jsdelivr.net;">
+            <link href="${stylesHighlightUri}" rel="stylesheet">
+            <link href="${stylesMainUri}" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+            <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+            <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+            <title>Buddy</title>
+            <script>
+    const sliderStates = new Map();
+
+    function showSlide(sliderId, index) {
+        const container = document.getElementById(sliderId);
+        const cards = container.querySelectorAll('.concept-card');
+        const indicators = container.querySelectorAll('.concept-indicator');
+        
+        if (!sliderStates.has(sliderId)) {
+            sliderStates.set(sliderId, {
+                currentSlide: 0,
+                totalSlides: cards.length
+            });
+        }
+        
+        cards.forEach(card => card.classList.remove('active'));
+        indicators.forEach(indicator => indicator.classList.remove('active'));
+        
+        cards[index].classList.add('active');
+        indicators[index].classList.add('active');
+        
+        container.querySelector('.concepts-slider').style.transform = 
+            \`translateX(-\${index * 100}%)\`;
+            
+        sliderStates.get(sliderId).currentSlide = index;
+    }
+
+    function nextConcept(sliderId) {
+        const state = sliderStates.get(sliderId);
+        if (!state) return;
+        
+        const nextIndex = (state.currentSlide + 1) % state.totalSlides;
+        showSlide(sliderId, nextIndex);
+    }
+
+    function prevConcept(sliderId) {
+        const state = sliderStates.get(sliderId);
+        if (!state) return;
+        
+        const prevIndex = (state.currentSlide - 1 + state.totalSlides) % state.totalSlides;
+        showSlide(sliderId, prevIndex);
+    }
+
+    function goToSlide(sliderId, index) {
+        showSlide(sliderId, index);
+    }
+</script>
+        </head>
             <body>
                 <div class="flex flex-col h-screen">
                     <div class="problem-box">
@@ -735,15 +800,23 @@ class BuddyViewProvider {
                             </span>
                         </button>
                     </div>
+
+                    <div id="loader-container" class="hidden">
+                        <svg class="loader-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <circle fill="var(--buddy-primary)" stroke="var(--buddy-primary)" stroke-width="15" r="15" cx="40" cy="100">
+        <animate attributeName="opacity" calcMode="spline" dur="2" values="1;0;1;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.4"></animate>
+    </circle>
+    <circle fill="var(--buddy-primary)" stroke="var(--buddy-primary)" stroke-width="15" r="15" cx="100" cy="100">
+        <animate attributeName="opacity" calcMode="spline" dur="2" values="1;0;1;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.2"></animate>
+    </circle>
+    <circle fill="var(--buddy-primary)" stroke="var(--buddy-primary)" stroke-width="15" r="15" cx="160" cy="100">
+        <animate attributeName="opacity" calcMode="spline" dur="2" values="1;0;1;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="0"></animate>
+    </circle>
+</svg>
+                    </div>
                     
                     <div id="qa-list" class="flex-1 overflow-y-auto p-4">
                         <!-- Lista de preguntas y respuestas -->
-                    </div>
-
-                    <!-- Loader fuera del dropdown -->
-                    <div id="in-progress" class="hidden">
-                        <div class="loader">
-                        </div>
                     </div>
     
                 <script>
@@ -843,6 +916,7 @@ document.addEventListener('click', (e) => {
         });
         return;
     }
+        document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAIConcept',
         problemText: getProblemText(),
@@ -861,6 +935,7 @@ document.addEventListener('click', (e) => {
         });
         return;
     }
+        document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAIUsage',
         problemText: {
@@ -881,6 +956,7 @@ document.getElementById('usage-button')?.addEventListener('click', () => {
         });
         return;
     }
+        document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAIUsage',
         problemText: {
@@ -902,6 +978,7 @@ document.getElementById('hint-button')?.addEventListener('click', () => {
         });
         return;
     }
+        document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAIHint',
         problemText: {
@@ -935,6 +1012,7 @@ document.getElementById('solution-button')?.addEventListener('click', () => {
         });
         return;
     }
+        document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAISolution',
         problemText: {
@@ -956,6 +1034,7 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
         });
         return;
     }
+        document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAIFollowUp',
         problemText: {

@@ -6,6 +6,18 @@
     let collapseId = 0;
     let detailId = 0;
 
+// Mostrar el loader
+function showLoader() {
+    const loader = document.getElementById('loader-container');
+    if (loader) loader.classList.remove('hidden');
+}
+
+// Ocultar el loader
+function hideLoader() {
+    const loader = document.getElementById('loader-container');
+    if (loader) loader.classList.add('hidden');
+}   
+
     // Función para obtener el texto del problema
 function getProblemText() {
     return document.getElementById('problem-text').value.trim();
@@ -212,8 +224,25 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         let curQueryList;
         
         switch (message.type) {
+            case "addDetail":
+                if (message.detailType === "concept") {
+                    const responseDiv = document.createElement('div');
+                    responseDiv.className = 'buddy-response-card';
+                    responseDiv.innerHTML = message.valueHtml;
+                    
+                    // Insertar al principio de la lista
+                    if (qaList.firstChild) {
+                        qaList.insertBefore(responseDiv, qaList.firstChild);
+                    } else {
+                        qaList.appendChild(responseDiv);
+                    }
+                }
+                // Ocultar el loader siempre, independientemente del detailType
+                document.getElementById('loader-container').classList.add('hidden');
+                hideLoader(); // Asegurarnos de que se oculte usando la función helper
+                break;
             case "stopProgress":
-                document.getElementById("in-progress")?.classList?.add("hidden");
+                hideLoader();
                 break;
 
             case "addNLQuestion":
@@ -239,6 +268,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
                 document.getElementById("in-progress")?.classList?.remove("hidden");
                 list.scrollTo(0, list.scrollHeight);
                 document.getElementById(`query-refresh-${message.overviewId}`)?.addEventListener("click", refreshHandler);
+                hideLoader();
                 break;
 
             case "addCodeQuestion":
@@ -264,6 +294,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
                 document.getElementById("in-progress")?.classList?.remove("hidden");
                 list.scrollTo(0, list.scrollHeight);
                 document.getElementById(`overview-refresh-${message.overviewId}`)?.addEventListener("click", refreshHandler);
+                hideLoader();
                 break;
 
             case "addOverview":
@@ -296,6 +327,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
                     e => detailButtonHandler(e, "askAIConcept"));
                 document.getElementById(`usage-button-${message.overviewId}`)?.addEventListener("click", 
                     e => detailButtonHandler(e, "askAIUsage"));
+                    hideLoader();
                 break;
 
             case "addDetail":
@@ -330,6 +362,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
                 detailId++;
                 collapseId++;
                 list.scrollTo(0, list.scrollHeight);
+                hideLoader();
                 break;
 
             case "redoQuery":
@@ -380,6 +413,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
                         document.getElementById(`${message.queryType}-comment-${replaceOverviewId}`)?.addEventListener("click", commentHandler);
                     }
                 }
+                hideLoader();
                 break;
                 case 'followUpResponse':
     const responseDiv = document.createElement('div');
@@ -409,6 +443,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         behavior: 'smooth'
     });
     document.getElementById('in-progress')?.classList.add('hidden');
+    hideLoader();
     break;
         }
     });
@@ -418,8 +453,9 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         e.preventDefault();
         e.stopPropagation();
         const input = document.getElementById("question-input");
-        
+    
         if (input?.value?.length > 0) {
+            showLoader(); // Mostrar loader antes de enviar el mensaje
             vscode.postMessage({
                 type: "askAIfromTab",
                 value: input.value,

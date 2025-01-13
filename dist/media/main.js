@@ -128,6 +128,7 @@ if (qaList) {
         switch (message.type) {
             case "stopProgress":
                 (_b = (_a = document.getElementById("in-progress")) === null || _a === void 0 ? void 0 : _a.classList) === null || _b === void 0 ? void 0 : _b.add("hidden");
+                hideLoader();
                 break;
             case "addNLQuestion":
                 const nlcodeHtml = message.code ? message.codeHtml : "";
@@ -149,6 +150,7 @@ if (qaList) {
                 (_d = (_c = document.getElementById("in-progress")) === null || _c === void 0 ? void 0 : _c.classList) === null || _d === void 0 ? void 0 : _d.remove("hidden");
                 list.scrollTo(0, list.scrollHeight);
                 (_e = document.getElementById(`query-refresh-${message.overviewId}`)) === null || _e === void 0 ? void 0 : _e.addEventListener("click", refreshHandler);
+                hideLoader();
                 break;
             case "addCodeQuestion":
                 const codeHtml = message.codeHtml;
@@ -170,6 +172,7 @@ if (qaList) {
                 (_g = (_f = document.getElementById("in-progress")) === null || _f === void 0 ? void 0 : _f.classList) === null || _g === void 0 ? void 0 : _g.remove("hidden");
                 list.scrollTo(0, list.scrollHeight);
                 (_h = document.getElementById(`overview-refresh-${message.overviewId}`)) === null || _h === void 0 ? void 0 : _h.addEventListener("click", refreshHandler);
+                hideLoader();
                 break;
             case "addOverview":
                 (_k = (_j = document.getElementById("in-progress")) === null || _j === void 0 ? void 0 : _j.classList) === null || _k === void 0 ? void 0 : _k.add("hidden");
@@ -195,6 +198,7 @@ if (qaList) {
                 (_m = document.getElementById(`overview-comment-${message.overviewId}`)) === null || _m === void 0 ? void 0 : _m.addEventListener("click", commentHandler);
                 (_o = document.getElementById(`concept-button-${message.overviewId}`)) === null || _o === void 0 ? void 0 : _o.addEventListener("click", e => detailButtonHandler(e, "askAIConcept"));
                 (_p = document.getElementById(`usage-button-${message.overviewId}`)) === null || _p === void 0 ? void 0 : _p.addEventListener("click", e => detailButtonHandler(e, "askAIUsage"));
+                hideLoader();
                 break;
             case "addDetail":
                 (_r = (_q = document.getElementById("in-progress")) === null || _q === void 0 ? void 0 : _q.classList) === null || _r === void 0 ? void 0 : _r.add("hidden");
@@ -226,6 +230,7 @@ if (qaList) {
                 detailId++;
                 collapseId++;
                 list.scrollTo(0, list.scrollHeight);
+                hideLoader();
                 break;
             case "redoQuery":
                 (_v = (_u = document.getElementById("in-progress")) === null || _u === void 0 ? void 0 : _u.classList) === null || _v === void 0 ? void 0 : _v.add("hidden");
@@ -270,6 +275,7 @@ if (qaList) {
                         (_z = document.getElementById(`${message.queryType}-comment-${replaceOverviewId}`)) === null || _z === void 0 ? void 0 : _z.addEventListener("click", commentHandler);
                     }
                 }
+                hideLoader();
                 break;
         }
     });
@@ -405,6 +411,7 @@ if (qaList) {
         switch (message.type) {
             case "stopProgress":
                 (_b = (_a = document.getElementById("in-progress")) === null || _a === void 0 ? void 0 : _a.classList) === null || _b === void 0 ? void 0 : _b.add("hidden");
+                hideLoader();
                 break;
             case "addNLQuestion":
                 const nlcodeHtml = message.code ? message.codeHtml : "";
@@ -426,6 +433,7 @@ if (qaList) {
                 (_d = (_c = document.getElementById("in-progress")) === null || _c === void 0 ? void 0 : _c.classList) === null || _d === void 0 ? void 0 : _d.remove("hidden");
                 list.scrollTo(0, list.scrollHeight);
                 (_e = document.getElementById(`query-refresh-${message.overviewId}`)) === null || _e === void 0 ? void 0 : _e.addEventListener("click", refreshHandler);
+                hideLoader();
                 break;
             case "addCodeQuestion":
                 const codeHtml = message.codeHtml;
@@ -447,6 +455,7 @@ if (qaList) {
                 (_g = (_f = document.getElementById("in-progress")) === null || _f === void 0 ? void 0 : _f.classList) === null || _g === void 0 ? void 0 : _g.remove("hidden");
                 list.scrollTo(0, list.scrollHeight);
                 (_h = document.getElementById(`overview-refresh-${message.overviewId}`)) === null || _h === void 0 ? void 0 : _h.addEventListener("click", refreshHandler);
+                hideLoader();
                 break;
             case "addOverview":
                 (_k = (_j = document.getElementById("in-progress")) === null || _j === void 0 ? void 0 : _j.classList) === null || _k === void 0 ? void 0 : _k.add("hidden");
@@ -472,6 +481,7 @@ if (qaList) {
                 (_m = document.getElementById(`overview-comment-${message.overviewId}`)) === null || _m === void 0 ? void 0 : _m.addEventListener("click", commentHandler);
                 (_o = document.getElementById(`concept-button-${message.overviewId}`)) === null || _o === void 0 ? void 0 : _o.addEventListener("click", e => detailButtonHandler(e, "askAIConcept"));
                 (_p = document.getElementById(`usage-button-${message.overviewId}`)) === null || _p === void 0 ? void 0 : _p.addEventListener("click", e => detailButtonHandler(e, "askAIUsage"));
+                hideLoader();
                 break;
             case "addDetail":
                 (_r = (_q = document.getElementById("in-progress")) === null || _q === void 0 ? void 0 : _q.classList) === null || _r === void 0 ? void 0 : _r.add("hidden");
@@ -503,6 +513,7 @@ if (qaList) {
                 detailId++;
                 collapseId++;
                 list.scrollTo(0, list.scrollHeight);
+                hideLoader();
                 break;
             case "redoQuery":
                 (_v = (_u = document.getElementById("in-progress")) === null || _u === void 0 ? void 0 : _u.classList) === null || _v === void 0 ? void 0 : _v.add("hidden");
@@ -547,6 +558,7 @@ if (qaList) {
                         (_z = document.getElementById(`${message.queryType}-comment-${replaceOverviewId}`)) === null || _z === void 0 ? void 0 : _z.addEventListener("click", commentHandler);
                     }
                 }
+                hideLoader();
                 break;
         }
     });

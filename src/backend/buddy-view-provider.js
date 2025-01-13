@@ -165,7 +165,7 @@ class BuddyViewProvider {
             },
             {
                 "role": "user",
-                "content": `Proporciona 3 pistas que ayuden a empezar a resolver el siguiente problema en ${problemText.language}:\n\n${problemText.text}. No añadas ningun texto al final.`
+                "content": `Proporciona 3 pistas que ayuden a empezar a resolver el siguiente problema en ${problemText.language}:\n\n${problemText.text}`
             }
         ];
     
@@ -177,7 +177,7 @@ class BuddyViewProvider {
             this.sendMessage({
                 type: 'hintResponse',
                 value: hintResponse,
-                valueHtml: Marked.parse(hintResponse) 
+                valueHtml: hintResponse
             });
         } catch (error) {
             console.error('Error generando las pistas:', error);
@@ -904,6 +904,20 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
     switch (message.type) {
         case 'updateProblem':
             document.getElementById('problem-text').value = message.text;
+            break;
+        case 'hintResponse':
+            const hintDiv = document.createElement('div');
+            hintDiv.className = 'buddy-response-card';
+            hintDiv.innerHTML = message.valueHtml; // Usar el HTML generado por el backend
+            qaList.insertBefore(hintDiv, qaList.firstChild); // Insertar al inicio de la lista
+            qaList.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            break;
+        
+        case 'error':
+            alert(message.message);
             break;
         case 'showProgress':
             document.getElementById('in-progress')?.classList.remove('hidden');

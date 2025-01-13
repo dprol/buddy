@@ -156,29 +156,97 @@ class BuddyViewProvider {
             console.error('Error: Texto del problema no proporcionado para askAIHint');
             return;
         }
-        console.log('Generando pista para el problema:', problemText.text);
+        console.log('Generando pista para el problema:', problemText.text, 'en lenguaje:', problemText.language);
     
         const chatPrompt = [
             {
                 "role": "system",
-                "content": "Eres un asistente experto que proporciona pistas para ayudar a estudiantes universitarios a resolver problemas de programación."
+                "content": `Eres un asistente de programación que proporciona exactamente 3 pistas cortas y directas con ejemplos de código en ${problemText.language}. No hagas introducciones ni comentarios adicionales.`
             },
             {
                 "role": "user",
-                "content": `Proporciona 3 pistas que ayuden a empezar a resolver el siguiente problema en ${problemText.language}:\n\n${problemText.text}`
+                "content": `Genera exactamente 3 pistas con ejemplos de código en ${problemText.language} para resolver este problema. Cada pista debe empezar con "PISTA X:" donde X es el número. No agregues ninguna introducción ni conclusión:\n\n${problemText.text}`
             }
         ];
     
         try {
             const hintResponse = await this.queryAI(chatPrompt, '', new AbortController());
-            console.log('Pistas generadas:', hintResponse);
+            
+            // Procesar la respuesta para asegurar exactamente 3 pistas
+            const hints = hintResponse
+                .split(/PISTA \d+:/)
+                .slice(1, 4)  // Tomar exactamente 3 pistas
+                .map(hint => hint.trim());
+
+                // Función para obtener el icono según el lenguaje
+    const getLanguageIcon = (language) => {
+        const icons = {
+            'python': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40v72a8,8,0,0,0,16,0V40h88V88a8,8,0,0,0,8,8h48V216H168a8,8,0,0,0,0,16h32a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM64,144H48a8,8,0,0,0-8,8v56a8,8,0,0,0,16,0v-8h8a28,28,0,0,0,0-56Zm0,40H56V160h8a12,12,0,0,1,0,24Zm90.78-27.76-18.78,30V208a8,8,0,0,1-16,0V186.29l-18.78-30a8,8,0,1,1,13.56-8.48L128,168.91l13.22-21.15a8,8,0,1,1,13.56,8.48Z"/>
+            </svg>`,
+            'cpp': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M48,180c0,11,7.18,20,16,20a14.18,14.18,0,0,0,10.22-4.66A8,8,0,0,1,85.78,206.4,30.06,30.06,0,0,1,64,216c-17.65,0-32-16.15-32-36s14.35-36,32-36a30.06,30.06,0,0,1,21.78,9.6,8,8,0,0,1-11.56,11.06A14.24,14.24,0,0,0,64,160C55.18,160,48,169,48,180Zm-8-68V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,0,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.69L160,51.31Zm-12,92H136V160a8,8,0,0,0-16,0v12H108a8,8,0,0,0,0,16h12v12a8,8,0,0,0,16,0V188h12a8,8,0,0,0,0-16Zm68,0H204V160a8,8,0,0,0-16,0v12H176a8,8,0,0,0,0,16h12v12a8,8,0,0,0,16,0V188h12a8,8,0,0,0,0-16Z"/>
+            </svg>`,
+            'c': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 15 15">
+                <path d="M10 5.5L9.93198 5.43198C9.33524 4.83524 8.52589 4.5 7.68198 4.5H7.5C5.84315 4.5 4.5 5.84315 4.5 7.5C4.5 9.15685 5.84315 10.5 7.5 10.5H7.68198C8.52589 10.5 9.33524 10.1648 9.93198 9.56802L10 9.5M1.5 10.5V4.5L7.5 1L13.5 4.5V10.5L7.5 14L1.5 10.5Z" stroke="currentColor"/>
+            </svg>`,
+            'java': `<svg fill="currentColor" width="24" height="24" viewBox="-3 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="m5.701 18.561s-.918.534.653.714c.575.085 1.239.134 1.913.134 1.084 0 2.138-.125 3.149-.363l-.093.018c.374.228.809.445 1.262.624l.059.02c-4.698 2.014-10.633-.117-6.942-1.148z"/>
+            </svg>`
+        };
+        return icons[language.toLowerCase()] || icons['python'];
+    };
     
-            // Enviar las pistas al front-end
+    const formattedHintResponse = `
+    <div class="hint-content">
+        <div class="hint-header-container">
+            <div class="language-icon">
+                ${problemText.language === 'python' ? `<svg width="24" height="24" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2.5H7M4.5 4V1.5C4.5 0.947715 4.94772 0.5 5.5 0.5H9.5C10.0523 0.5 10.5 0.947715 10.5 1.5V6.5C10.5 7.05228 10.0523 7.5 9.5 7.5H5.5C4.94772 7.5 4.5 7.94772 4.5 8.5V13.5C4.5 14.0523 4.94772 14.5 5.5 14.5H9.5C10.0523 14.5 10.5 14.0523 10.5 13.5V11M8 4.5H1.5C0.947715 4.5 0.5 4.94772 0.5 5.5V10.5C0.5 11.0523 0.947715 11.5 1.5 11.5H4.5M7 10.5H13.5C14.0523 10.5 14.5 10.0523 14.5 9.5V4.5C14.5 3.94772 14.0523 3.5 13.5 3.5H10.5M8 12.5H9" stroke="currentColor"/>
+                </svg>` : problemText.language === 'cpp' ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M48,180c0,11,7.18,20,16,20a14.18,14.18,0,0,0,10.22-4.66A8,8,0,0,1,85.78,206.4,30.06,30.06,0,0,1,64,216c-17.65,0-32-16.15-32-36s14.35-36,32-36a30.06,30.06,0,0,1,21.78,9.6,8,8,0,0,1-11.56,11.06A14.24,14.24,0,0,0,64,160C55.18,160,48,169,48,180Zm-8-68V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,0,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.69L160,51.31Zm-12,92H136V160a8,8,0,0,0-16,0v12H108a8,8,0,0,0,0,16h12v12a8,8,0,0,0,16,0V188h12a8,8,0,0,0,0-16Zm68,0H204V160a8,8,0,0,0-16,0v12H176a8,8,0,0,0,0,16h12v12a8,8,0,0,0,16,0V188h12a8,8,0,0,0,0-16Z"/>
+                </svg>` : problemText.language === 'c' ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 15 15">
+                    <path d="M10 5.5L9.93198 5.43198C9.33524 4.83524 8.52589 4.5 7.68198 4.5H7.5C5.84315 4.5 4.5 5.84315 4.5 7.5C4.5 9.15685 5.84315 10.5 7.5 10.5H7.68198C8.52589 10.5 9.33524 10.1648 9.93198 9.56802L10 9.5M1.5 10.5V4.5L7.5 1L13.5 4.5V10.5L7.5 14L1.5 10.5Z" stroke="currentColor"/>
+                </svg>` : `<svg version="1.1" width="24" height="24" viewBox="0 0 490 490" style="enable-background:new 0 0 490 490;" fill="currentColor">
+                    <g>
+                        <path d="M117.077,372.699c9.825,0,16.344-1.585,19.544-4.74c3.2-3.17,4.8-9.6,4.8-19.275v-52.009h-14.296v50.244
+                            c0,5.742-0.598,9.436-1.795,11.066c-1.196,1.645-3.888,2.467-8.09,2.467c-7.028,0-10.662-2.288-10.871-6.849
+                            c-0.12-1.884-0.165-3.484-0.165-4.815c0-1.391-0.12-3.484-0.344-6.295H92.224l-0.165,5.578c0,10.318,1.555,17.002,4.666,20.053
+                            C99.835,371.174,106.624,372.699,117.077,372.699z"/>
+                        <path d="M167.77,357.581h32.524l4.8,14.46h14.864l-25.466-75.366h-21.473l-25.077,75.366h15.133L167.77,357.581z M183.949,307.77
+                            l13.025,39.253h-25.84L183.949,307.77z"/>
+                        <path d="M265.566,372.041l24.3-75.366h-15.133l-13.967,42.737c-1.256,3.828-2.766,8.942-4.531,15.342l-1.436,5.144h-0.389
+                            c-2.617-9.615-4.591-16.464-5.907-20.546l-14.146-42.678h-14.849l24.075,75.366H265.566z"/>
+                        <path d="M304.491,372.041l4.695-14.46h32.524l4.815,14.46h14.849l-25.451-75.366h-21.488l-25.062,75.366H304.491z M325.366,307.77
+                            l13.04,39.253h-25.84L325.366,307.77z"/>
+                        <path d="M77.788,0v265.111H42.189v139.615h0.001l35.59,35.591L77.788,490h370.023V102.422L345.388,0H77.788z M395.793,389.413
+                            H57.501v-108.99h338.292V389.413z M353.022,36.962l57.816,57.804h-57.816V36.962z"/>
+                    </g>
+                </svg>`}
+            </div>
+            <div class="hint-header">Pistas para empezar</div>
+        </div>
+        ${hints.map((hint, index) => {
+            const formattedHint = hint.replace(
+                /```(\w+)?\s*([\s\S]*?)```/g,
+                (_, lang, code) => `<pre><code class="language-${problemText.language}">${code.trim()}</code></pre>`
+            );
+            return `
+                <div class="hint-item">
+                    <div class="hint-title">PISTA ${index + 1}:</div>
+                    <div class="hint-content-text">
+                        ${formattedHint}
+                    </div>
+                </div>`;
+        }).join('')}
+    </div>`;
+    
             this.sendMessage({
                 type: 'hintResponse',
                 value: hintResponse,
-                valueHtml: hintResponse
+                valueHtml: formattedHintResponse
             });
+    
         } catch (error) {
             console.error('Error generando las pistas:', error);
             this.sendMessage({
@@ -188,6 +256,8 @@ class BuddyViewProvider {
         }
     }
     async sendApiRequestWithSolution(problemText) {
+        const text = typeof problemText === 'string' ? problemText : problemText.text;
+        const language = problemText.language;
         if (!problemText) {
             console.error('Error: Texto del problema no proporcionado para askAISolution');
             return;
@@ -290,6 +360,8 @@ class BuddyViewProvider {
 
     // Método para enviar mensajes al WebView
     async preparePrompt(queryType, problemText) {
+        const text = typeof problemText === 'string' ? problemText : problemText.text;
+        const language = problemText.language;
         let chatPrompt = [
             {
                 "role": "system",
@@ -323,7 +395,7 @@ class BuddyViewProvider {
         } else if (queryType === 'askAIUsage') {
             prompt = `Genera ejemplos en pseudocódigo acompañados de diagramas de flujo que ilustren la solución del problema del enunciado:\n\n${problemText}\n\nEl lenguaje viene marcado en el problema. No incluyas explicación del algoritmo, limítate a los ejemplos anteriores. Titula cada ejemplo con Pseudocódigo y Diagrama de flujo`;
         }   else if (queryType === 'askAIHint') {
-                prompt = `Proporciona al usuario una lista enumerada de 3 pasos iniciales para abordar el problema de programación, orientándolo sobre cómo comenzar la solución. En el lenguaje ${problemText.language}. Cada pista tiene que llevar una ayuda de código. Limitarse a poner los pasos, no dar más explicaciones al final.\n\n${problemText.text}`;
+                prompt = `Proporciona al usuario una lista enumerada de 3 pasos iniciales para abordar el problema de programación, orientándolo sobre cómo comenzar la solución. En el lenguaje ${problemText.language}. Cada pista tiene que llevar una ayuda de código. Limitarse a poner los pasos, no dar más explicaciones al final. Decir explicitamente en qué lenguaje le estás pasando las pistas. Tiene que ser ${language}\n\n${problemText.text}`;
                 assistantPrompt = "Aquí tienes una pista útil:".trim();
         } else if (queryType === 'askAISolution') {
             prompt = `Proporciona una explicación clara y concisa de la solución al siguiente problema, usando fragmentos de código para ilustrar los conceptos clave. No introduzcas limítate a poner bullets. La solución debe ser en el lenguaje especificado:\n\n${problemText}`;
@@ -852,7 +924,8 @@ document.getElementById('next-step-button')?.addEventListener('click', () => {
     document.getElementById('in-progress')?.classList.remove('hidden');
     closeDropdown();
 });
-// Agregar event listeners para los nuevos botones
+// Event listeners
+// Botón de solución
 document.getElementById('solution-button')?.addEventListener('click', () => {
     const problemText = getProblemText();
     if (!problemText) {
@@ -864,13 +937,16 @@ document.getElementById('solution-button')?.addEventListener('click', () => {
     }
     vscode.postMessage({ 
         type: 'askAISolution',
-        problemText: problemText,
-        language: currentLanguage
+        problemText: {
+            text: problemText,
+            language: currentLanguage
+        }
     });
     document.getElementById('in-progress')?.classList.remove('hidden');
     closeDropdown();
 });
 
+// Botón de follow-up
 document.getElementById('follow-up-button')?.addEventListener('click', () => {
     const problemText = getProblemText();
     if (!problemText) {
@@ -882,8 +958,10 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
     }
     vscode.postMessage({ 
         type: 'askAIFollowUp',
-        problemText: problemText,
-        language: currentLanguage
+        problemText: {
+            text: problemText,
+            language: currentLanguage
+        }
     });
     document.getElementById('in-progress')?.classList.remove('hidden');
     closeDropdown();

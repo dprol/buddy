@@ -643,33 +643,70 @@ pre {
     padding: 0.2em 0.4em;
     border-radius: 3px;
 }
+
 .hint-content {
-    background: #f0f4f8; /* Un tono más claro de azul */
-    border: 1px solid #bae6fd; /* Borde azul claro */
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--buddy-border);
     border-radius: 8px;
-    padding: 16px;
-    margin: 8px 0;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-all;
-    white-space: pre-wrap;
+    padding: 1.5rem;
+    margin: 1rem 0;
     position: relative;
+    padding-top: 2rem; /* Aumentar el padding superior para dar espacio al header */
 }
 
-.hint-content::before {
-    content: 'Pista';
+.hint-header {
+    background: var(--buddy-primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    height: 24px; /* Altura fija igual que el language-icon */
+    display: flex;
+    align-items: center;
+    white-space: nowrap; /* Evita que el texto se divida en múltiples líneas */
+}
+
+.hint-content .hint-item {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--buddy-border);
+}
+
+.hint-content .hint-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.hint-content .hint-title {
+    color: var(--buddy-primary);
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.hint-header-container {
     position: absolute;
     top: -10px;
     left: 12px;
-    background: var(--buddy-primary);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
 }
 
-.hint-content p {
-    margin: 0;
-    line-height: 1.6;
-    color: var(--buddy-text);
+.language-icon {
+    background: var(--buddy-primary);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px; /* Altura fija igual que el hint-header */
+}
+
+.language-icon svg {
+    width: 16px;
+    height: 16px;
+    color: white;
 }

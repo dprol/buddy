@@ -117,7 +117,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         const inputApi = document.getElementById(`code-input-${overviewId}`);
         const fileName = document.getElementById(`filename-${overviewId}`);
         const overviewRef = document.getElementById(`overview-${overviewId}`);
-
+    
         if (inputApi?.value?.length > 0) {
             document.getElementById("in-progress")?.classList?.remove("hidden");
             vscode.postMessage({
@@ -125,7 +125,8 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
                 code: inputApi.value,
                 filename: fileName.value,
                 queryId: overviewId,
-                overviewRef: overviewRef.value
+                overviewRef: overviewRef.value,
+                language: currentLanguage // Añadir el lenguaje
             });
         }
     };
@@ -173,7 +174,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         const refreshId = queryType === "overview" ? 
             `collapse-overview-${overviewId}` : 
             `collapse-${overviewId}`;
-
+    
         if (prompt?.value?.length > 0) {
             document.getElementById("in-progress")?.classList?.remove("hidden");
             vscode.postMessage({
@@ -182,7 +183,8 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
                 overviewId: overviewId,
                 refreshId: refreshId,
                 prompt: prompt.value,
-                commentType: e.target.id.replace("-refresh", "")
+                commentType: e.target.id.replace("-refresh", ""),
+                language: currentLanguage // Añadir el lenguaje
             });
         }
     };
@@ -420,7 +422,8 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         if (input?.value?.length > 0) {
             vscode.postMessage({
                 type: "askAIfromTab",
-                value: input.value
+                value: input.value,
+                language: currentLanguage // Añadir el lenguaje
             });
             input.value = "";
         }
@@ -465,7 +468,10 @@ if (!document.querySelector(".concept-button")) {
     conceptButton.className = "concept-button";
     conceptButton.textContent = "Concepto";
     conceptButton.addEventListener("click", function() {
-        vscode.postMessage({ type: "askAIConcept" });
+        vscode.postMessage({ 
+            type: "askAIConcept",
+            language: currentLanguage // Añadir el lenguaje
+        });
     });
     buttonContainer.appendChild(conceptButton);
 }
@@ -475,7 +481,10 @@ if (!document.querySelector(".usage-button")) {
     usageButton.className = "usage-button";
     usageButton.textContent = "Ejemplos";
     usageButton.addEventListener("click", function() {
-        vscode.postMessage({ type: "askAIUsage" });
+        vscode.postMessage({ 
+            type: "askAIUsage",
+            language: currentLanguage // Añadir el lenguaje
+        });
     });
     buttonContainer.appendChild(usageButton);
 }

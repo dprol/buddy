@@ -19,11 +19,12 @@ body {
     background-color: var(--buddy-background);
 }
 
-#ask-button {
-    font-size: 1.25rem;  /* Texto más grande */
-    font-weight: 500;    /* Un poco más bold */
-    padding: 12px 24px;  /* Más padding para un botón más grande */
-    background-color: #DC1436;
+#ask-button,
+.language-button {
+    font-size: 1rem; /* Tamaño de texto reducido */
+    font-weight: 500; /* Bold ligero */
+    padding: 8px 16px; /* Reducir padding para ahorrar espacio */
+    background-color: #DC1436; /* Mismo color */
     border: none;
     border-radius: 8px;
     color: white;
@@ -31,29 +32,43 @@ body {
     align-items: center;
     justify-content: space-between;
     width: auto;
-    min-width: 180px;
+    min-width: 120px; /* Reducir el ancho mínimo */
+    max-width: 150px; /* Limitar el ancho máximo */
     box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25);
+    cursor: pointer;
 }
 
-/* Contenedor principal */
+#ask-button:hover,
+.language-button:hover {
+    background-color: #FF4B4B;
+}
+
+/* Ajustar el contenedor principal */
 .flex.flex-col.h-screen {
-    width: 100%;
-    max-width: var(--container-width);
-    margin: 0 auto;
-    padding: 1rem;
-    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.h-screen {
+    height: 100vh;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
 }
 
 /* Caja del problema */
 .problem-box {
-    width: 100%;
-    background-color: white;
-    border: 1px solid var(--buddy-border);
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    min-height: 250px;
+    margin: 1rem;
+    padding: 0.5rem;
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 8px;
+    background-color: var(--vscode-editor-background);
+    overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .problem-header {
@@ -65,22 +80,64 @@ body {
     color: var(--buddy-text);
 }
 
+.problem-box:focus-within {
+    border-color: var(--buddy-primary);
+    /* Eliminar el box-shadow o hacerlo más sutil */
+    box-shadow: none;
+    background-color: transparent;
+}
+
 .problem-content {
+    width: 100%;
+    min-height: 150px;
     padding: 1rem;
+    border: none;
+    resize: vertical;
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
     line-height: 1.5;
-    color: var(--buddy-text);
-    white-space: pre-wrap;
-    font-family: inherit;
-    flex-grow: 1;
-    overflow-y: auto;
-    background-color: var(--buddy-background);
-    min-height: 200px;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;       /* Permite saltos de línea */
+    word-wrap: break-word;       /* Permite que las palabras largas se rompan */
+    overflow-x: hidden;          /* Oculta el scroll horizontal */
+    max-width: 100%;             /* Asegura que no exceda el ancho del contenedor */
+    box-sizing: border-box;      /* Incluye padding y border en el ancho total */
+}
+
+.problem-content::placeholder {
+    color: #9CA3AF;
+    opacity: 0.8;
+}
+
+.problem-content:focus {
+    background-color: transparent !important;
+    outline: none;
 }
 
 .problem-content:empty::before {
-    content: 'Selecciona un problema para empezar...';
-    color: #999;
-    font-style: italic;
+    content: 'Escribe aquí el problema para empezar...';
+    color: #9CA3AF;
+    font-style: normal;
+}
+
+/* Estilizar la barra de scroll */
+.problem-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.problem-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.problem-content::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3);
+    border-radius: 4px;
+}
+
+.problem-content::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.5);
 }
 
 /* Contenedor de botones */
@@ -88,9 +145,25 @@ body {
     width: 100%;
     display: flex;
     gap: 0.75rem;
-    padding: 0.75rem 0;
-    margin-top: 0.5rem;
-    justify-content: flex-start;
+    padding: 0 1rem;  /* Alinear con el margen de la caja */
+    margin-top: 0.5rem; /* Reducir espacio entre la caja y los botones */
+    margin-bottom: 1rem;
+}
+
+/* Estilo de los botones */
+.buddy-button {
+    min-height: 32px;  /* Altura consistente */
+    padding: 4px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background-color: var(--buddy-primary);
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
 }
 
 /* Dropdown contenedor */
@@ -123,21 +196,16 @@ body {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
-    min-width: 100%;
+    min-width: 250px; /* Aumentado para dar más espacio */
     background-color: white;
     border: 1px solid var(--buddy-border);
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     padding: 0.5rem;
-    opacity: 0; /* Inicialmente oculto */
+    opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-dropdown-menu:not(.hidden) {
-    opacity: 1; /* Mostrar el menú */
-    visibility: visible;
 }
 
 /* Elementos del dropdown */
@@ -147,11 +215,31 @@ dropdown-menu:not(.hidden) {
     gap: 8px;
     padding: 8px 12px;
     width: 100%;
+    white-space: nowrap;
     border: none;
     background: none;
     cursor: pointer;
     color: var(--buddy-text);
+    transition: background-color 0.2s ease;
 }
+
+.dropdown-item .item-icon {
+    color: var(--buddy-primary); /* Color unificado para todos los iconos */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown-item .item-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Asegurar que el texto siempre tenga el color correcto */
+.dropdown-item span:last-child {
+    color: var(--buddy-text);
+}
+
 
 /* Hover efecto para las opciones */
 .dropdown-item:hover {
@@ -207,16 +295,14 @@ dropdown-menu:not(.hidden) {
     justify-content: center;
     border-radius: 8px;
     margin-left: auto;
-}
-
-#clear-button:hover {
-    background-color: var(--buddy-secondary) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 10px rgba(220, 20, 54, 0.3) !important;
+    background: transparent;  /* Fondo transparente */
+    border: none;            /* Sin borde */
+    cursor: pointer;         /* Mantener el cursor pointer */
 }
 
 #clear-button .button-icon {
     margin: 0;
+    color: var(--buddy-primary);  /* Color del icono */
 }
 
 #clear-button .button-icon svg {
@@ -227,13 +313,16 @@ dropdown-menu:not(.hidden) {
 
 /* Lista de respuestas */
 #qa-list {
+    border-top: 1px solid var(--buddy-border); /* Línea separadora */
+    margin-top: 1.5rem; /* Espacio adicional entre botones y la barra */
+    padding: 1rem 0; /* Espaciado interno para la sección de respuestas */
+    flex: 1;
     display: flex;
-    flex-direction: column-reverse;  /* Esto hace que los elementos se apilen desde abajo */
-    width: 100%;
-    max-width: 100%;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+    height: 100%;
     box-sizing: border-box;
-    padding: 1rem 0;
-    border-top: 1px solid var(--buddy-border);
 }
 
 /* Eliminar el borde del último elemento */
@@ -243,12 +332,14 @@ dropdown-menu:not(.hidden) {
 
 /* Tarjetas de respuesta */
 .buddy-response-card {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--buddy-border);
+    border-radius: 8px;
+    padding: 1rem;
     width: 100%;
     box-sizing: border-box;
+    transition: transform 0.2s ease-out;
+    animation: slideDown 0.3s ease-out;
 }
 
 /* Contenedor de conceptos */
@@ -437,11 +528,148 @@ pre {
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
 /* Utilidades */
 .hidden {
-    display: none !important;
+    display: none;
+}
+
+.language-button {
+        font-size: 1rem; /* Tamaño de texto reducido */
+        font-weight: 500; /* Bold ligero */
+        padding: 8px 16px; /* Reducir padding para ahorrar espacio */
+        background-color: #DC1436; /* Mismo color */
+        border: none;
+        border-radius: 8px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: auto;
+        min-width: 120px; /* Reducir el ancho mínimo */
+        max-width: 150px; /* Limitar el ancho máximo */
+        box-shadow: 0 2px 4px rgba(220, 20, 54, 0.25);
+        cursor: pointer;
+    }
+
+.language-button:hover {
+    background-color: #FF4B4B;
+}
+
+#language-options .dropdown-item {
+    padding: 8px 12px;
+    gap: 8px;
+}
+
+#language-options {
+    min-width: 150px; /* Ajustar ancho del dropdown */
+    background-color: white;
+    border: 1px solid var(--buddy-border);
+    border-radius: 8px;
+    padding: 8px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.follow-up-questions {
+    margin-top: 1rem;
+}
+
+.follow-up-item {
+    background-color: var(--vscode-editor-background);
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.follow-up-question {
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.follow-up-answer {
+    border-top: 1px solid var(--vscode-panel-border);
+    padding: 0.75rem;
+    margin-top: 0.25rem;
+    background-color: var(--vscode-editor-background);
+}
+
+.show-answer-button {
+    margin-left: auto;
+    padding: 4px 8px;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.show-answer-button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.hidden {
+    display: none;
+}
+
+.answer-content {
+    margin-top: 0.5rem;
+}
+
+.answer-content code {
+    background-color: var(--vscode-textBlockQuote-background);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+}
+.hint-content {
+    background: #f0f4f8; /* Un tono más claro de azul */
+    border: 1px solid #bae6fd; /* Borde azul claro */
+    border-radius: 8px;
+    padding: 16px;
+    margin: 8px 0;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: pre-wrap;
+    position: relative;
+}
+
+.hint-content::before {
+    content: 'Pista';
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    background: var(--buddy-primary);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+.hint-content p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--buddy-text);
 }

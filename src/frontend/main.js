@@ -224,6 +224,98 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         }
     };
 
+    // Función para procesar la solución
+async function processSolution(output) {
+    const parts = [];
+    const partRegex = /PARTE(\d+):\s*TÍTULO:\s*(.*?)\s*CONTENIDO:\s*([\s\S]*?)(?=PARTE\d+:|$)/g;
+    let match;
+    
+    while ((match = partRegex.exec(output)) !== null) {
+        parts.push({
+            number: match[1],
+            title: match[2].trim(),
+            content: match[3].trim()
+        });
+    }
+
+    const sliderId = `solution-slider-${Date.now()}`;
+    
+    return `
+        <div class="solution-container" id="${sliderId}">
+            <div class="concepts-slider">
+                ${parts.map((part, index) => `
+                    <div class="solution-card ${index === 0 ? 'active' : ''}" data-index="${index}">
+                        <h3 class="solution-title">${part.title}</h3>
+                        <div class="solution-content">${marked(part.content)}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="concepts-navigation">
+                <button class="concept-nav-button prev" onclick="prevSlide('${sliderId}')">←</button>
+                <button class="concept-nav-button next" onclick="nextSlide('${sliderId}')">→</button>
+            </div>
+            <div class="concepts-indicators">
+                ${parts.map((_, index) => `
+                    <button class="concept-indicator ${index === 0 ? 'active' : ''}"
+                            data-index="${index}"
+                            onclick="goToSlide('${sliderId}', ${index})"></button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Funciones de navegación
+function goToSlide(sliderId, index) {
+    const container = document.getElementById(sliderId);
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.solution-card, .concept-card');
+    const indicators = container.querySelectorAll('.concept-indicator');
+
+    cards.forEach(card => {
+        card.classList.remove('active');
+        card.style.display = 'none';
+    });
+    
+    indicators.forEach(indicator => {
+        indicator.classList.remove('active');
+    });
+
+    if (cards[index]) {
+        cards[index].classList.add('active');
+        cards[index].style.display = 'flex';
+    }
+    
+    if (indicators[index]) {
+        indicators[index].classList.add('active');
+    }
+}
+
+function nextSlide(sliderId) {
+    const container = document.getElementById(sliderId);
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.solution-card, .concept-card');
+    const currentCard = container.querySelector('.solution-card.active, .concept-card.active');
+    let currentIndex = Array.from(cards).indexOf(currentCard);
+    
+    const nextIndex = (currentIndex + 1) % cards.length;
+    goToSlide(sliderId, nextIndex);
+}
+
+function prevSlide(sliderId) {
+    const container = document.getElementById(sliderId);
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.solution-card, .concept-card');
+    const currentCard = container.querySelector('.solution-card.active, .concept-card.active');
+    let currentIndex = Array.from(cards).indexOf(currentCard);
+    
+    const prevIndex = (currentIndex - 1 + cards.length) % cards.length;
+    goToSlide(sliderId, prevIndex);
+}
+
     // Manejador de mensajes
     window.addEventListener("message", (event) => {
         const message = event.data;
@@ -231,22 +323,19 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
         
         switch (message.type) {
             case "addDetail":
-                if (message.detailType === "concept") {
-                    const responseDiv = document.createElement('div');
-                    responseDiv.className = 'buddy-response-card';
-                    responseDiv.innerHTML = message.valueHtml;
-                    
-                    // Insertar al principio de la lista
-                    if (qaList.firstChild) {
-                        qaList.insertBefore(responseDiv, qaList.firstChild);
-                    } else {
-                        qaList.appendChild(responseDiv);
-                    }
-                }
-                // Ocultar el loader siempre, independientemente del detailType
-                document.getElementById('loader-container').classList.add('hidden');
-                hideLoader(); // Asegurarnos de que se oculte usando la función helper
-                break;
+    if (message.detailType === "solution") {
+        const responseDiv = document.createElement('div');
+        responseDiv.className = 'buddy-response-card';
+        responseDiv.innerHTML = message.valueHtml;
+        if (qaList.firstChild) {
+            qaList.insertBefore(responseDiv, qaList.firstChild);
+        } else {
+            qaList.appendChild(responseDiv);
+        }
+    }
+    document.getElementById('loader-container').classList.add('hidden');
+    hideLoader();
+    break;
             case "stopProgress":
                 hideLoader();
                 break;

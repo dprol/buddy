@@ -340,6 +340,8 @@ body {
     box-sizing: border-box;
     transition: transform 0.2s ease-out;
     animation: slideDown 0.3s ease-out;
+    max-width: 100%;
+    margin-bottom: 1rem;
 }
 
 /* Loader */
@@ -412,7 +414,7 @@ pre {
 @keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-5px);
     }
     to {
         opacity: 1;
@@ -556,10 +558,17 @@ pre {
     box-sizing: border-box;
 }
 
-.concepts-slider {
-    display: flex;
-    transition: transform 0.3s ease-in-out;
+/* Contenedor de conceptos y soluciones */
+.concepts-container, .solution-container {
+    position: relative;
+    overflow: visible;
     width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--vscode-editor-background);
+    border-radius: 8px;
+    padding: 1rem;
+    box-sizing: border-box;
 }
 
 .concept-card {
@@ -594,96 +603,6 @@ pre {
     width: 100%; /* Asegurar que ocupa todo el ancho */
 }
 
-.concepts-navigation {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: calc(100% + 4rem); /* Aumentado para dar más espacio */
-    left: -2rem; /* Ajustado para compensar el ancho extra */
-    display: flex;
-    justify-content: space-between;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.concept-nav-button {
-    pointer-events: auto;
-    background-color: var(--buddy-primary);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: absolute;
-}
-
-.concept-nav-button:hover {
-    background-color: var(--buddy-secondary);
-}
-
-.concepts-indicators {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.concept-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--buddy-border);
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.concept-indicator.active {
-    background: var(--buddy-primary);
-}
-
-.concept-nav-button.prev {
-    left: 0.5rem; /* Más cerca del texto */
-}
-
-.concept-nav-button.next {
-    right: 0.5rem; /* Más alejado del texto */
-}
-
-.follow-up-questions {
-    margin-top: 1rem;
-}
-
-.follow-up-item {
-    background-color: var(--vscode-editor-background);
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    border: 1px solid var(--buddy-border);
-}
-
-.follow-up-question {
-    padding: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    background-color: var(--buddy-accent);
-    border-radius: 4px 4px 0 0;
-}
-
-.follow-up-answer {
-    border-top: 1px solid var(--buddy-border);
-    padding: 0.75rem;
-    margin-top: 0.25rem;
-    background-color: var(--vscode-editor-background);
-}
-
 .show-answer-button {
     margin-left: auto;
     padding: 4px 8px;
@@ -709,6 +628,7 @@ pre {
     border-radius: 3px;
 }
 
+/* Ejemplos/Usage */
 .usage-content {
     background: var(--vscode-editor-background);
     border: 1px solid var(--buddy-border);
@@ -747,15 +667,16 @@ pre {
 }
 
 .usage-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .usage-section:last-child {
     margin-bottom: 0;
 }
+
 .usage-title {
     color: var(--buddy-primary);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     margin-bottom: 1rem;
     font-weight: 600;
 }
@@ -777,13 +698,14 @@ pre {
 
 .uml-diagram {
     background-color: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid var(--buddy-border);
+    padding: 1rem;
+    border-radius: 6px;
     font-family: monospace;
     white-space: pre;
     overflow-x: auto;
     line-height: 1.4;
+    border: 1px solid var(--buddy-border);
+    margin-top: 0.5rem;
 }
 
 .uml-diagram .decision {
@@ -792,4 +714,373 @@ pre {
 
 .uml-diagram .action {
     padding-left: 2rem;
+}
+
+.solution-container {
+    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    background-color: var(--vscode-editor-background);
+    border-radius: 8px;
+}
+
+.solution-container, .followup-container {
+    --card-bg: var(--vscode-editor-background);
+    --title-color: var(--buddy-primary);
+    --border-color: var(--buddy-border);
+    --text-color: var(--buddy-text);
+    position: relative;
+    overflow: visible;
+    width: 90%;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--vscode-editor-background);
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    box-sizing: border-box;
+}
+
+.solution-card, .followup-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    flex: 0 0 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    display: none;
+    width: calc(100% - 4rem);
+    box-sizing: border-box;
+}
+
+.solution-card.active, .followup-card.active {
+    opacity: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.solution-content {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-color);
+}
+
+.followup-title {
+    color: var(--buddy-primary);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    width: 100%;
+}
+
+.concept-nav-button:hover {
+    background-color: var(--buddy-secondary);
+    transform: scale(1.1);
+}
+
+/* Hacer los botones de navegación más pequeños */
+.solution-container .concept-nav-button {
+    width: 28px; /* Reducido de 32px */
+    height: 28px; /* Reducido de 32px */
+    font-size: 0.9rem; /* Texto más pequeño para las flechas */
+}
+
+/* Ajustar indicadores */
+.solution-container .concepts-indicators {
+    margin-top: 0.75rem; /* Reducido de 1rem */
+}
+
+.solution-container .concept-indicator {
+    width: 6px; /* Reducido de 8px */
+    height: 6px; /* Reducido de 8px */
+}
+
+.followup-question-header {
+    color: var(--buddy-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.followup-question-content {
+    background-color: var(--buddy-accent);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    color: var(--buddy-text);
+}
+
+.followup-answer-section {
+    margin-top: 0.5rem;
+}
+
+.expand-button:hover {
+    background-color: rgba(220, 20, 54, 0.1);
+}
+
+.expand-button svg {
+    transition: transform 0.3s ease;
+}
+
+.expand-button.expanded svg {
+    transform: rotate(45deg);
+}
+
+.followup-answer.visible {
+    display: block;
+    animation: slideDown 0.2s ease-out;
+}
+
+.answer-section {
+    margin-top: 0.5rem;
+}
+
+.expand-button:hover {
+    background-color: var(--buddy-accent);
+}
+
+.expand-button .icon-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.expand-button svg {
+    transition: transform 0.3s ease;
+}
+
+.expand-button.expanded svg {
+    transform: rotate(45deg);
+}
+
+.followup-answer.visible {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+.concept-nav-button.prev {
+    left: 1rem;
+}
+
+.concept-nav-button.next {
+    right: 1rem;
+}
+
+.expand-button .icon-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.expand-button:hover {
+    background-color: var(--buddy-accent);
+}
+
+.followup-answer.visible {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Navegación */
+.concepts-navigation {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: calc(100% + 2rem);
+    left: -1rem;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+    padding: 0 0.5rem;
+}
+
+.followup-question {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--buddy-primary);
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background-color: var(--buddy-accent);
+    border-radius: 6px;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+}
+
+.expand-button:hover {
+    background-color: var(--buddy-accent);
+}
+
+.expand-button .icon-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.expand-button svg {
+    transition: transform 0.3s ease;
+}
+
+.expand-button.expanded svg {
+    transform: rotate(45deg);
+}
+
+.expand-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: none;
+    border: 1px solid var(--buddy-primary);
+    border-radius: 6px;
+    color: var(--buddy-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.followup-answer.visible {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Ajustes para el contenedor de follow-up */
+.followup-container {
+    --text-color: var(--buddy-text);
+    --primary-color: var(--buddy-primary);
+    padding: 1rem;
+    max-height: 400px; /* Reducir altura máxima */
+    overflow-y: auto;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Ajustes para la tarjeta de follow-up */
+.followup-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--buddy-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.followup-answer {
+    display: none;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--buddy-border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Ajustes para la tarjeta de solución */
+.solution-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--buddy-border);
+    border-radius: 8px;
+    opacity: 1;
+}
+
+/* Ajustes para el título de la solución */
+.solution-title {
+    color: var(--buddy-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+/* Slider */
+.concepts-slider {
+    display: flex;
+    transition: transform 0.3s ease-in-out;
+    width: 100%;
+}
+
+/* Tarjetas */
+.concept-card, .solution-card {
+    flex: 0 0 100%;
+    padding: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--card-bg);
+    border: 1px solid var(--buddy-border);
+    border-radius: 8px;
+}
+
+.concept-card.active, .solution-card.active {
+    opacity: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Títulos */
+.concept-title, .solution-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--buddy-primary);
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Contenido */
+.concept-content, .solution-content {
+    width: 100%;
+    line-height: 1.5;
+    font-size: 0.9rem;
+    color: var(--buddy-text);
+}
+
+/* Indicadores */
+.concepts-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.concept-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--buddy-border);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.concept-indicator.active {
+    background: var(--buddy-primary);
+}
+
+.concept-nav-button {
+    pointer-events: auto;
+    width: 24px;
+    height: 24px;
+    background-color: var(--buddy-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: absolute;
+    font-size: 0.8rem;
 }

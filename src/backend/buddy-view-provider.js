@@ -280,20 +280,33 @@ updateLanguage(language) {
     async sendApiRequestWithSolution(problemText) {
         const text = typeof problemText === 'string' ? problemText : problemText.text;
         const language = problemText.language;
+        
         if (!problemText) {
             console.error('Error: Texto del problema no proporcionado para askAISolution');
             return;
         }
+        
         console.log('Generando explicación de la solución para:', problemText);
     
         const chatPrompt = [
             {
                 "role": "system",
-                "content": "Eres un asistente experto que proporciona explicaciones claras y concisas de soluciones de programación, usando fragmentos de código para ilustrar los conceptos clave."
+                "content": `Eres un asistente experto que proporciona soluciones de programación divididas en 3 partes. Usa exactamente el formato:
+                PARTE1:
+                TÍTULO: [título descriptivo]
+                CONTENIDO: [explicación con código en ${language}]
+                
+                PARTE2:
+                TÍTULO: [título descriptivo]
+                CONTENIDO: [explicación con código en ${language}]
+                
+                PARTE3: 
+                TÍTULO: [título descriptivo]
+                CONTENIDO: [explicación con código en ${language}]`
             },
             {
                 "role": "user",
-                "content": `Por favor, explica la solución del siguiente problema usando fragmentos de código:\n\n${problemText}`
+                "content": `Explica la solución del siguiente problema:\n\n${text}`
             }
         ];
     
@@ -301,12 +314,47 @@ updateLanguage(language) {
             const solutionResponse = await this.queryAI(chatPrompt, '', new AbortController());
             console.log('Solución generada:', solutionResponse);
     
-            // Convertir la respuesta a HTML con formato
-            const valueHtml = Marked.parse(solutionResponse);
+            // Procesar las partes
+            const parts = [];
+            const partRegex = /PARTE(\d+):\s*TÍTULO:\s*(.*?)\s*CONTENIDO:\s*([\s\S]*?)(?=PARTE\d+:|$)/g;
+            let match;
+            
+            while ((match = partRegex.exec(solutionResponse)) !== null) {
+                parts.push({
+                    number: match[1],
+                    title: match[2].trim(),
+                    content: match[3].trim()
+                });
+            }
+    
+            const sliderId = `solution-slider-${Date.now()}`;
+            const valueHtml = `
+                <div class="concepts-container solution-container" id="${sliderId}">
+                    <div class="concepts-slider" style="transform: translateX(0%)">
+                        ${parts.map((part, index) => `
+                            <div class="concept-card solution-card ${index === 0 ? 'active' : ''}" data-index="${index}">
+                                <h3 class="concept-title">${part.title}</h3>
+                                <div class="concept-content solution-content">${Marked.parse(part.content)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="concepts-navigation">
+                        <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
+                        <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
+                    </div>
+                    <div class="concepts-indicators">
+                        ${parts.map((_, index) => `
+                            <button class="concept-indicator ${index === 0 ? 'active' : ''}"
+                                    data-index="${index}"
+                                    onclick="goToSlide('${sliderId}', ${index})"></button>
+                        `).join('')}
+                    </div>
+                </div>`;
     
             this.sendMessage({
-                type: 'solutionResponse',
+                type: 'addDetail',
                 value: solutionResponse,
+                detailType: 'solution',
                 valueHtml: valueHtml
             });
         } catch (error) {
@@ -319,57 +367,100 @@ updateLanguage(language) {
     }
     
     async sendApiRequestWithFollowUp(problemText) {
+        const text = typeof problemText === 'string' ? problemText : problemText.text;
+        const language = problemText.language;
+        
         if (!problemText) {
             console.error('Error: Texto del problema no proporcionado para askAIFollowUp');
             return;
         }
+        
         console.log('Generando preguntas de seguimiento para:', problemText);
     
-        try {
-            const [chatPrompt, prompt, assistantPrompt] = await this.preparePrompt('askAIFollowUp', problemText);
-            const followUpResponse = await this.queryAI(chatPrompt, assistantPrompt, new AbortController());
-            
-            // Extraer preguntas y respuestas usando expresiones regulares
-            const pairs = [];
-            const regex = /Q(\d+):\s*(.*?)\s*A\1:\s*(.*?)(?=Q\d+:|$)/gs;
-            let match;
+        const chatPrompt = [
+            {
+                "role": "system",
+                "content": `Eres un asistente experto que genera 3 preguntas de seguimiento educativas. Usa exactamente el formato:
+                PREGUNTA1:
+                TÍTULO: [pregunta corta]
+                RESPUESTA: [respuesta detallada con código en ${language}]
+                
+                PREGUNTA2:
+                TÍTULO: [pregunta corta]
+                RESPUESTA: [respuesta detallada con código en ${language}]
+                
+                PREGUNTA3:
+                TÍTULO: [pregunta corta]
+                RESPUESTA: [respuesta detallada con código en ${language}]`
+            },
+            {
+                "role": "user",
+                "content": `Genera preguntas de seguimiento para este problema:\n\n${text}`
+            }
+        ];
     
-            while ((match = regex.exec(followUpResponse)) !== null) {
-                pairs.push({
+        try {
+            const followUpResponse = await this.queryAI(chatPrompt, '', new AbortController());
+            
+            // Procesar las preguntas
+            const questions = [];
+            const questionRegex = /PREGUNTA(\d+):\s*TÍTULO:\s*(.*?)\s*RESPUESTA:\s*([\s\S]*?)(?=PREGUNTA\d+:|$)/g;
+            let match;
+            
+            while ((match = questionRegex.exec(followUpResponse)) !== null) {
+                questions.push({
                     number: match[1],
-                    question: match[2].trim(),
+                    title: match[2].trim(),
                     answer: match[3].trim()
                 });
             }
     
-            // Crear HTML con estructura colapsable
-            const htmlResponse = `
-                <div class="follow-up-questions">
-                    ${pairs.map(pair => `
-                        <div class="follow-up-item mb-4">
-                            <div class="follow-up-question">
-                                <strong>Pregunta ${pair.number}:</strong> ${pair.question}
-                                <button class="show-answer-button" onclick="this.parentElement.nextElementSibling.classList.toggle('hidden'); this.textContent = this.textContent === 'Ver respuesta' ? 'Ocultar respuesta' : 'Ver respuesta'">
-                                    Ver respuesta
+            const sliderId = `followup-slider-${Date.now()}`;
+            const valueHtml = `
+            <div class="concepts-container followup-container" id="${sliderId}">
+                <div class="concepts-slider">
+                    ${questions.map((question, index) => `
+                        <div class="concept-card followup-card ${index === 0 ? 'active' : ''}" data-index="${index}">
+                            <h3 class="concept-title followup-title">Pregunta ${question.number}</h3>
+                            <div class="followup-question">${question.title}</div>
+                            <div class="answer-section">
+                                <button 
+                                    class="expand-button" 
+                                    onclick="toggleAnswer(this, 'answer-${sliderId}-${index}')"
+                                >
+                                    <span class="icon-text">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                                            <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm48-88a8,8,0,0,1-8,8H136v32a8,8,0,0,1-16,0V136H88a8,8,0,0,1,0-16h32V88a8,8,0,0,1,16,0v32h32A8,8,0,0,1,176,128Z"></path>
+                                        </svg>
+                                        Ver respuesta
+                                    </span>
                                 </button>
-                            </div>
-                            <div class="follow-up-answer hidden">
-                                <div class="answer-content">
-                                    ${Marked.parse(pair.answer)}
+                                <div id="answer-${sliderId}-${index}" class="followup-answer">
+                                    ${Marked.parse(question.answer)}
                                 </div>
                             </div>
                         </div>
                     `).join('')}
                 </div>
-            `;
+                <div class="concepts-navigation">
+                    <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
+                    <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
+                </div>
+                <div class="concepts-indicators">
+                    ${questions.map((_, index) => `
+                        <button class="concept-indicator ${index === 0 ? 'active' : ''}"
+                                data-index="${index}"
+                                onclick="goToSlide('${sliderId}', ${index})"></button>
+                    `).join('')}
+                </div>
+            </div>`;
     
             this.sendMessage({
                 type: 'addDetail',
                 value: followUpResponse,
                 detailType: 'followup',
-                valueHtml: htmlResponse
+                valueHtml: valueHtml
             });
-    
         } catch (error) {
             console.error('Error generando preguntas de seguimiento:', error);
             this.sendMessage({
@@ -458,20 +549,46 @@ updateLanguage(language) {
                 prompt = `Proporciona al usuario una lista enumerada de 3 pasos iniciales para abordar el problema de programación, orientándolo sobre cómo comenzar la solución. En el lenguaje ${problemText.language}. Cada pista tiene que llevar una ayuda de código. Limitarse a poner los pasos, no dar más explicaciones al final. Decir explicitamente en qué lenguaje le estás pasando las pistas. Tiene que ser ${language}\n\n${problemText.text}`;
                 assistantPrompt = "Aquí tienes una pista útil:".trim();
         } else if (queryType === 'askAISolution') {
-            prompt = `Proporciona una explicación clara y concisa de la solución al siguiente problema, usando fragmentos de código para ilustrar los conceptos clave. No introduzcas limítate a poner bullets. La solución debe ser en el lenguaje especificado:\n\n${problemText}`;
-            assistantPrompt = "Aquí tienes la explicación de la solución:";
+            prompt = `Analiza el siguiente problema y proporciona una solución detallada en ${language}. 
+            La solución debe estar dividida en exactamente 3 partes usando este formato:
+        
+            PARTE1:
+            TÍTULO: [título descriptivo de esta parte]
+            CONTENIDO: [explicación detallada con código en ${language} si es necesario]
+        
+            PARTE2:
+            TÍTULO: [título descriptivo de esta parte]
+            CONTENIDO: [explicación detallada con código en ${language} si es necesario]
+        
+            PARTE3:
+            TÍTULO: [título descriptivo de esta parte]
+            CONTENIDO: [explicación detallada con código en ${language} si es necesario]
+        
+            Problema a resolver:
+            ${text}`;
+        
+            assistantPrompt = "Aquí tienes la solución detallada:";
+        
         } else if (queryType === 'askAIFollowUp') {
-            prompt = `Genera exactamente 3 preguntas de seguimiento educativas relacionadas con este problema ${problemText}. Para cada pregunta, proporciona también una respuesta detallada. Usa el siguiente formato exacto para cada par de pregunta y respuesta:
-    
-    Q1: [Primera pregunta]
-    A1: [Respuesta a la primera pregunta]
-    Q2: [Segunda pregunta]
-    A2: [Respuesta a la segunda pregunta]
-    Q3: [Tercera pregunta]
-    A3: [Respuesta a la tercera pregunta]
-    
-    El problema es:\n\n${problemText}`;
-            assistantPrompt = "Aquí tienes las preguntas de seguimiento relacionadas con el problema:";
+            prompt = `Genera exactamente 3 preguntas de seguimiento educativas sobre conceptos avanzados o casos especiales relacionados con este problema. 
+            Usa exactamente este formato:
+        
+            PREGUNTA1:
+            TÍTULO: [pregunta corta y directa]
+            RESPUESTA: [respuesta detallada con ejemplos de código en ${language} si es necesario]
+        
+            PREGUNTA2:
+            TÍTULO: [pregunta corta y directa]
+            RESPUESTA: [respuesta detallada con ejemplos de código en ${language} si es necesario]
+        
+            PREGUNTA3:
+            TÍTULO: [pregunta corta y directa]
+            RESPUESTA: [respuesta detallada con ejemplos de código en ${language} si es necesario]
+        
+            El problema base es:
+            ${text}`;
+        
+            assistantPrompt = "Aquí tienes las preguntas de seguimiento:";
         }
     
         chatPrompt.push(
@@ -504,15 +621,6 @@ updateLanguage(language) {
         const detailType = queryType.replace("askAI", "").toLowerCase();
         
         if (queryType === "askAIConcept") {
-            console.log('Output original:', output);
-            
-            // Asegurarnos de que hay contenido
-            if (!output) {
-                console.error('No hay contenido en la respuesta');
-                throw new Error('No se pudo obtener el contenido del concepto');
-            }
-            
-            // Procesar los conceptos
             const concepts = [];
             const conceptPairs = output.split(/(?=CONCEPTO:)/g);
             
@@ -523,37 +631,27 @@ updateLanguage(language) {
                 const explanationMatch = pair.match(/EXPLICACIÓN:\s*([\s\S]*?)(?=(?:\s*CONCEPTO:|$))/is);
                 
                 if (conceptMatch && explanationMatch) {
-                    const concept = {
-                        mainConcept: conceptMatch[1].trim(),
-                        explanation: explanationMatch[1].trim()
-                    };
-                    console.log('Concepto procesado:', concept); // Para debugging
-                    concepts.push(concept);
+                    concepts.push({
+                        title: conceptMatch[1].trim(),
+                        content: explanationMatch[1].trim()
+                    });
                 }
             }
             
-            if (concepts.length === 0) {
-                console.error('No se encontraron conceptos en la respuesta');
-                throw new Error('No se pudieron extraer los conceptos');
-            }
-            
-            console.log('Conceptos procesados:', concepts);
-    
-            const sliderId = `slider-${Date.now()}`;
-            
+            const sliderId = `concept-slider-${Date.now()}`;
             valueHtml = `
                 <div class="concepts-container" id="${sliderId}">
-                    <div class="concepts-slider" style="transform: translateX(0%)">
+                    <div class="concepts-slider">
                         ${concepts.map((concept, index) => `
                             <div class="concept-card ${index === 0 ? 'active' : ''}" data-index="${index}">
-                                <h3 class="concept-title">${concept.mainConcept}</h3>
-                                <div class="concept-content">${Marked.parse(concept.explanation)}</div>
+                                <h3 class="concept-title">${concept.title}</h3>
+                                <div class="concept-content">${Marked.parse(concept.content)}</div>
                             </div>
                         `).join('')}
                     </div>
                     <div class="concepts-navigation">
-                        <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
-                        <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
+                        <button class="concept-nav-button prev" onclick="prevSlide('${sliderId}')">←</button>
+                        <button class="concept-nav-button next" onclick="nextSlide('${sliderId}')">→</button>
                     </div>
                     <div class="concepts-indicators">
                         ${concepts.map((_, index) => `
@@ -562,24 +660,16 @@ updateLanguage(language) {
                                     onclick="goToSlide('${sliderId}', ${index})"></button>
                         `).join('')}
                     </div>
-                </div>
-            `;
-        }  else if (queryType === "askAIHint") {
-                valueHtml = `<div class="hint-content">
-                    <div class="buddy-highlight">${Marked.parse(output)}</div>
                 </div>`;
         } else if (queryType === "askAIUsage") {
-            console.log('Procesando respuesta de usage:', output);
-            
-            const pseudoMatch = output.match(/PSEUDOCÓDIGO:([\s\S]*?)(?=@startuml|$)/i);
-            const diagramMatch = output.match(/@startuml([\s\S]*?)@enduml/i);
+            const pseudoMatch = output.match(/Pseudocódigo:([\s\S]*?)(?=Diagrama de flujo:|$)/i);
+            const diagramMatch = output.match(/Diagrama de flujo:([\s\S]*?)(?=@startuml|$)/i);
+            const umlMatch = output.match(/@startuml([\s\S]*?)@enduml/i);
             
             const pseudocode = pseudoMatch ? pseudoMatch[1].trim() : '';
-            const diagram = diagramMatch ? diagramMatch[1].trim() : '';
+            const diagramIntro = diagramMatch ? diagramMatch[1].trim() : '';
+            const umlDiagram = umlMatch ? umlMatch[1].trim() : '';
             
-            console.log('Pseudocódigo:', pseudocode);
-            console.log('Diagrama:', diagram);
-        
             valueHtml = `
                 <div class="usage-content">
                     <div class="usage-section">
@@ -588,10 +678,31 @@ updateLanguage(language) {
                     </div>
                     <div class="usage-section">
                         <h3 class="usage-title">Diagrama de Flujo</h3>
-                        <pre class="uml-diagram">${diagram}</pre>
+                        ${diagramIntro ? `<p>${diagramIntro}</p>` : ''}
+                        <pre class="uml-diagram">${umlDiagram}</pre>
                     </div>
                 </div>`;
         } else {
+            valueHtml = Marked.parse(output);
+        }
+    
+        this.sendMessage({
+            type: 'addDetail',
+            value: output,
+            queryId: queryType === "askAIQuery" ? this.overviewId : queryId,
+            detailType: detailType,
+            valueHtml: valueHtml
+        });
+    
+        if (queryType === "askAIQuery") {
+            this.updateChatHistory(prompt, output, editorSelectedText);
+        } else {
+            this.previousChat.push(
+                { "role": "user", "content": prompt },
+                { "role": "assistant", "content": output }
+            );
+        }
+    {
             valueHtml = Marked.parse(output);
         }
     
@@ -725,6 +836,18 @@ updateLanguage(language) {
             <title>Buddy</title>
             <script>
     const sliderStates = new Map();
+
+    function toggleAnswer(button, answerId) {
+        const answerDiv = document.getElementById(answerId);
+        if (answerDiv) {
+            answerDiv.classList.toggle('visible');
+            button.classList.toggle('expanded');
+            const icon = button.querySelector('svg');
+            if (icon) {
+                icon.style.transform = button.classList.contains('expanded') ? 'rotate(45deg)' : 'rotate(0deg)';
+            }
+        }
+    }
 
     function showSlide(sliderId, index) {
     const container = document.getElementById(sliderId);

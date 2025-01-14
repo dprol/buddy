@@ -66,10 +66,10 @@ updateLanguage(language) {
         }
         
         try {
-            // Asegurarse de que no hay espacios en blanco al final de los mensajes
+
             const cleanMessages = chatPrompt.map(msg => ({
                 role: msg.role === 'assistant' ? 'assistant' : 'user',
-                content: msg.content.trim() // Eliminar espacios en blanco al principio y final
+                content: msg.content.trim()
             }));
     
             const response = await this.anthropic.messages.create({
@@ -77,7 +77,7 @@ updateLanguage(language) {
                 messages: cleanMessages,
                 max_tokens: 2000,
                 temperature: 0.5,
-                system: cleanMessages[0].content.trim() // Asegurarse de que el mensaje del sistema también está limpio
+                system: cleanMessages[0].content.trim()
             });
     
             return response.content[0].text.trim();
@@ -140,10 +140,9 @@ updateLanguage(language) {
     
             this.sendMessage({ type: 'showProgress' });
             
-            // Asegurar que selectedText incluye el lenguaje
             const problemText = {
                 text: selectedText,
-                language: this.currentLanguage // Necesitamos asegurar que esta variable existe
+                language: this.currentLanguage
             };
     
             let [chatPrompt, prompt, assistantPrompt] = await this.preparePrompt(
@@ -315,6 +314,7 @@ updateLanguage(language) {
             console.log('Solución generada:', solutionResponse);
     
             // Procesar las partes
+
             const parts = [];
             const partRegex = /PARTE(\d+):\s*TÍTULO:\s*(.*?)\s*CONTENIDO:\s*([\s\S]*?)(?=PARTE\d+:|$)/g;
             let match;

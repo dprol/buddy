@@ -68,8 +68,7 @@ const qaList = document.getElementById("qa-list");
             closeLanguageDropdown();
         }
     });
- 
-     // Event listeners para las opciones de lenguaje
+
      document.querySelectorAll('#language-options .dropdown-item').forEach(option => {
         option.addEventListener('click', (e) => {
             const selectedLanguage = e.currentTarget.dataset.language;
@@ -77,7 +76,6 @@ const qaList = document.getElementById("qa-list");
             languageButton.querySelector('span').textContent = e.currentTarget.textContent.trim();
             closeLanguageDropdown();
             
-            // Notificar al backend del cambio de lenguaje
             vscode.postMessage({
                 type: 'languageChanged',
                 language: selectedLanguage
@@ -225,6 +223,7 @@ stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2" style="color: var(
     };
 
     // Función para procesar la solución
+    
 async function processSolution(output) {
     const parts = [];
     const partRegex = /PARTE(\d+):\s*TÍTULO:\s*(.*?)\s*CONTENIDO:\s*([\s\S]*?)(?=PARTE\d+:|$)/g;

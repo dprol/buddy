@@ -342,18 +342,6 @@ body {
     animation: slideDown 0.3s ease-out;
 }
 
-.usage-content {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 16px;
-    margin: 8px 0;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: break-all;
-    white-space: pre-wrap;
-}
-
 /* Loader */
 #in-progress {
     text-align: center;
@@ -558,11 +546,14 @@ pre {
 
 .concepts-container {
     position: relative;
-    overflow: hidden;
-    width: 100%;
+    overflow: visible; /* Cambiado de hidden a visible */
+    width: 90%;
+    max-width: 600px;
+    margin: 0 auto;
     background-color: var(--vscode-editor-background);
     border-radius: 8px;
-    padding: 1rem;
+    padding: 1rem 2rem;
+    box-sizing: border-box;
 }
 
 .concepts-slider {
@@ -574,43 +565,61 @@ pre {
 .concept-card {
     flex: 0 0 100%;
     padding: 1.5rem;
-    margin: 0;
+    margin: 0 2rem;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
-    display: flex;
-    flex-direction: column;
+    display: none;
+    width: calc(100% - 4rem);
+    box-sizing: border-box;
 }
 
 .concept-card.active {
     opacity: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centrar contenido */
+}
+
+.concept-content {
+    width: 100%;
+    line-height: 1.6;
+    text-align: left; /* Alinear texto a la izquierda */
+}
+
+.concept-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--buddy-primary);
+    text-align: center; /* Centrar título */
+    width: 100%; /* Asegurar que ocupa todo el ancho */
 }
 
 .concepts-navigation {
     position: absolute;
     top: 50%;
-    left: 0;
-    right: 0;
     transform: translateY(-50%);
+    width: calc(100% + 4rem); /* Aumentado para dar más espacio */
+    left: -2rem; /* Ajustado para compensar el ancho extra */
     display: flex;
     justify-content: space-between;
-    padding: 0 1rem;
     pointer-events: none;
+    z-index: 2;
 }
 
 .concept-nav-button {
+    pointer-events: auto;
     background-color: var(--buddy-primary);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    pointer-events: auto;
     transition: all 0.2s ease;
-    z-index: 2;
+    position: absolute;
 }
 
 .concept-nav-button:hover {
@@ -638,6 +647,15 @@ pre {
 .concept-indicator.active {
     background: var(--buddy-primary);
 }
+
+.concept-nav-button.prev {
+    left: 0.5rem; /* Más cerca del texto */
+}
+
+.concept-nav-button.next {
+    right: 0.5rem; /* Más alejado del texto */
+}
+
 .follow-up-questions {
     margin-top: 1rem;
 }
@@ -689,4 +707,89 @@ pre {
     background-color: var(--buddy-accent);
     padding: 0.2em 0.4em;
     border-radius: 3px;
+}
+
+.usage-content {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--buddy-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.usage-content h3 {
+    color: var(--buddy-primary);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.pseudo-code {
+    margin-bottom: 2rem;
+}
+
+.pseudo-code pre {
+    background: var(--buddy-background);
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.flow-diagram {
+    margin-top: 2rem;
+}
+
+.flow-diagram .mermaid {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.usage-section {
+    margin-bottom: 2rem;
+}
+
+.usage-section:last-child {
+    margin-bottom: 0;
+}
+.usage-title {
+    color: var(--buddy-primary);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.usage-section pre {
+    background: var(--buddy-background);
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.usage-section .mermaid {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.uml-diagram {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--buddy-border);
+    font-family: monospace;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.4;
+}
+
+.uml-diagram .decision {
+    font-weight: bold;
+}
+
+.uml-diagram .action {
+    padding-left: 2rem;
 }

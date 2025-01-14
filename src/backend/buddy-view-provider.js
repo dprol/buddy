@@ -46,6 +46,18 @@ class BuddyViewProvider {
         this.previousChat = [];
         this.ac = new AbortController();
         this.overviewId = 0;
+        this.currentLanguage = 'python'; // Valor por defecto
+    }
+
+updateLanguage(language) {
+    console.log('Actualizando lenguaje a:', language);
+    this.currentLanguage = language;
+}
+
+    hideLoader() {
+        this.sendMessage({
+            type: 'hideLoader'
+        });
     }
 
     async queryAI(chatPrompt, assistantPrompt, abortController) {
@@ -113,46 +125,52 @@ class BuddyViewProvider {
     }
 
     async sendApiRequestWithCode(selectedText, queryType, abortController, overviewRef = '', queryId = null, nlPrompt = '') {
-        showLoader();
-        console.log('Iniciando petición API:', queryType);
-        
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            this.sendMessage({
-                type: 'error',
-                message: 'No hay un editor activo.'
-            });
-            return;
-        }
-
         try {
+            this.sendMessage({ type: 'showLoader' });
+            console.log('Iniciando petición API:', queryType);
+            
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                this.sendMessage({
+                    type: 'error',
+                    message: 'No hay un editor activo.'
+                });
+                return;
+            }
+    
             this.sendMessage({ type: 'showProgress' });
-
+            
+            // Asegurar que selectedText incluye el lenguaje
+            const problemText = {
+                text: selectedText,
+                language: this.currentLanguage // Necesitamos asegurar que esta variable existe
+            };
+    
             let [chatPrompt, prompt, assistantPrompt] = await this.preparePrompt(
                 queryType, 
-                selectedText
+                problemText
             );
-
+    
             console.log('Prompt preparado:', prompt);
-
+    
             let output = await this.queryAI(
                 chatPrompt,
                 assistantPrompt,
-                abortController,
-                queryType === "askAIQuery"
+                abortController
             );
-
+    
             console.log('Respuesta recibida:', output);
-
             await this.processQueryResponse(queryType, output, prompt, queryId, selectedText);
             
-            this.sendMessage({ type: 'hideProgress' });
+            this.sendMessage({ type: 'hideLoader' });
+            
         } catch (error) {
             console.error('Error en sendApiRequestWithCode:', error);
             this.sendMessage({
                 type: 'error',
                 message: 'Error: ' + error.message
             });
+            this.sendMessage({ type: 'hideLoader' });
         }
     }
     async sendApiRequestWithHint(problemText) {
@@ -366,17 +384,47 @@ class BuddyViewProvider {
     async preparePrompt(queryType, problemText) {
         const text = typeof problemText === 'string' ? problemText : problemText.text;
         const language = problemText.language;
-        let chatPrompt = [
-            {
-                "role": "system",
-                "content": "Soy un asistente experto para estudiantes universitarios"
-            }
-        ];
-    
+        let chatPrompt = [{
+            "role": "system",
+            "content": "Soy un asistente experto para estudiantes universitarios"
+        }];
         let prompt = '';
         let assistantPrompt = '';
     
-        if (queryType === 'askAINextStep') {
+        if (queryType === 'askAIUsage') {
+            prompt = `Analiza el siguiente problema y genera dos partes:
+        
+            1. Un pseudocódigo claro y detallado que resuelva el problema.
+            2. Un diagrama de flujo usando notación UML que represente la solución.
+            
+            Para el diagrama usa este formato exacto:
+        
+            @startuml
+            start
+            :Inicializar lista_pares;
+            repeat
+              :Solicitar valor de x;
+            repeat while (x <= 0)
+            repeat
+              :Solicitar valor de y;
+            repeat while (y <= x)
+            :Recorrer de x a y;
+            while (hay más números?) is (sí)
+              if (número es par?) then (sí)
+                :Agregar a lista_pares;
+              endif
+            endwhile (no)
+            :Mostrar lista_pares;
+            stop
+            @enduml
+        
+            El problema a resolver es:
+            ${text}
+            
+            Lenguaje a usar: ${language}`;
+            
+            assistantPrompt = "Aquí tienes el pseudocódigo y diagrama de flujo:";
+        } else if (queryType === 'askAINextStep') {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 throw new Error('No hay editor activo. Por favor, abre un archivo de código.');
@@ -390,12 +438,20 @@ class BuddyViewProvider {
             prompt = `Analiza el siguiente código en ${problemText.language} y proporciona solo el siguiente paso en el problema sin revelar la solución. Incluye el fragmento de código seleccionado y la sugerencia sin ningún otro comentario.\n\nCódigo actual:\n${selectedText}`;
             assistantPrompt = "Aquí tienes las sugerencias para el siguiente paso:".trim();
         } else if (queryType === 'askAIConcept') {
-                    prompt = `Proporciona definiciones breves y precisas de conceptos básicos de programación presentes en el problema. Solo los conceptos relevantes que ayuden a entender el problema mejor. Si es un concepto de código acompaña la definición con un ejemplo en ${problemText.language}. 
-    
-                     Problema:
-                     ${problemText}`;
+            prompt = `Analiza el siguiente problema y proporciona exactamente 3 definiciones de los conceptos clave de programación presentes.
+            Si es un concepto específico del lenguaje ${problemText.language}, incluye ejemplos en ese lenguaje.
             
-            assistantPrompt = "";
+            Usa EXACTAMENTE este formato para cada concepto, incluyendo los marcadores CONCEPTO: y EXPLICACIÓN::
+        
+            CONCEPTO: [nombre del concepto]
+            EXPLICACIÓN: [explicación detallada]
+        
+            Asegúrate de dejar una línea en blanco entre cada concepto.
+        
+            Problema:
+            ${problemText.text}`;
+                
+            assistantPrompt = "Aquí tienes los conceptos clave:";
         } else if (queryType === 'askAIUsage') {
             prompt = `Genera ejemplos en pseudocódigo acompañados de diagramas de flujo que ilustren la solución del problema del enunciado:\n\n${problemText}\n\nEl lenguaje viene marcado en el problema. No incluyas explicación del algoritmo, limítate a los ejemplos anteriores. Titula cada ejemplo con Pseudocódigo y Diagrama de flujo`;
         }   else if (queryType === 'askAIHint') {
@@ -448,33 +504,50 @@ class BuddyViewProvider {
         const detailType = queryType.replace("askAI", "").toLowerCase();
         
         if (queryType === "askAIConcept") {
-            console.log('Output original:', output); // Añadir este log
-        
-            const concepts = output
-                .split('\n')
-                .filter(line => line.trim())
-                .map(concept => {
-                    console.log('Procesando línea:', concept); // Añadir este log
-                    const [mainConcept, explanation] = concept.split(':').map(str => str.trim());
-                    console.log('Concepto procesado:', { mainConcept, explanation }); // Añadir este log
-                    return {
-                        mainConcept,
-                        explanation
+            console.log('Output original:', output);
+            
+            // Asegurarnos de que hay contenido
+            if (!output) {
+                console.error('No hay contenido en la respuesta');
+                throw new Error('No se pudo obtener el contenido del concepto');
+            }
+            
+            // Procesar los conceptos
+            const concepts = [];
+            const conceptPairs = output.split(/(?=CONCEPTO:)/g);
+            
+            for (const pair of conceptPairs) {
+                if (!pair.trim()) continue;
+                
+                const conceptMatch = pair.match(/CONCEPTO:\s*(.*?)\s*(?=EXPLICACIÓN:|$)/is);
+                const explanationMatch = pair.match(/EXPLICACIÓN:\s*([\s\S]*?)(?=(?:\s*CONCEPTO:|$))/is);
+                
+                if (conceptMatch && explanationMatch) {
+                    const concept = {
+                        mainConcept: conceptMatch[1].trim(),
+                        explanation: explanationMatch[1].trim()
                     };
-                })
-                .filter(concept => concept.mainConcept && concept.explanation);
-        
-            console.log('Conceptos finales:', concepts); // Añadir este log
-        
+                    console.log('Concepto procesado:', concept); // Para debugging
+                    concepts.push(concept);
+                }
+            }
+            
+            if (concepts.length === 0) {
+                console.error('No se encontraron conceptos en la respuesta');
+                throw new Error('No se pudieron extraer los conceptos');
+            }
+            
+            console.log('Conceptos procesados:', concepts);
+    
             const sliderId = `slider-${Date.now()}`;
             
             valueHtml = `
                 <div class="concepts-container" id="${sliderId}">
-                    <div class="concepts-slider">
+                    <div class="concepts-slider" style="transform: translateX(0%)">
                         ${concepts.map((concept, index) => `
                             <div class="concept-card ${index === 0 ? 'active' : ''}" data-index="${index}">
                                 <h3 class="concept-title">${concept.mainConcept}</h3>
-                                <p class="concept-content">${concept.explanation}</p>
+                                <div class="concept-content">${Marked.parse(concept.explanation)}</div>
                             </div>
                         `).join('')}
                     </div>
@@ -495,10 +568,29 @@ class BuddyViewProvider {
                 valueHtml = `<div class="hint-content">
                     <div class="buddy-highlight">${Marked.parse(output)}</div>
                 </div>`;
-        } else if (queryType === 'askAIUsage') {
-            valueHtml = `<div class="usage-content">
-                <div class="buddy-highlight">${Marked.parse(output)}</div>
-            </div>`;
+        } else if (queryType === "askAIUsage") {
+            console.log('Procesando respuesta de usage:', output);
+            
+            const pseudoMatch = output.match(/PSEUDOCÓDIGO:([\s\S]*?)(?=@startuml|$)/i);
+            const diagramMatch = output.match(/@startuml([\s\S]*?)@enduml/i);
+            
+            const pseudocode = pseudoMatch ? pseudoMatch[1].trim() : '';
+            const diagram = diagramMatch ? diagramMatch[1].trim() : '';
+            
+            console.log('Pseudocódigo:', pseudocode);
+            console.log('Diagrama:', diagram);
+        
+            valueHtml = `
+                <div class="usage-content">
+                    <div class="usage-section">
+                        <h3 class="usage-title">Pseudocódigo</h3>
+                        <pre><code class="language-${this.currentLanguage}">${pseudocode}</code></pre>
+                    </div>
+                    <div class="usage-section">
+                        <h3 class="usage-title">Diagrama de Flujo</h3>
+                        <pre class="uml-diagram">${diagram}</pre>
+                    </div>
+                </div>`;
         } else {
             valueHtml = Marked.parse(output);
         }
@@ -564,13 +656,23 @@ class BuddyViewProvider {
             enableScripts: true,
             localResourceRoots: [this.context.extensionUri]
         };
+
         webviewView.webview.html = this.getHtml(webviewView.webview);
-    
+
         webviewView.webview.onDidReceiveMessage(async (data) => {
             console.log('Mensaje recibido en resolveWebviewView:', data);
             
             try {
-                if (data.type === 'askAIHint') {
+                if (data.type === 'languageChanged') {
+                    this.updateLanguage(data.language);
+                    return;
+                }
+
+                if (data.type === 'askAIConcept') {
+                    console.log('Procesando solicitud de concepto para lenguaje:', data.problemText.language);
+                    this.sendMessage({ type: 'showLoader' });
+                    await this.sendApiRequestWithCode(data.problemText.text, data.type, new AbortController(), '', null, '', data.problemText.language);
+                } else if (data.type === 'askAIHint') {
                     console.log('Procesando solicitud de pista');
                     await this.sendApiRequestWithHint(data.problemText);
                 } else if (['askAIConcept', 'askAIUsage', 'askAINextStep'].includes(data.type)) {
@@ -599,6 +701,8 @@ class BuddyViewProvider {
                     type: 'error',
                     message: 'Error: ' + error.message
                 });
+            } finally {
+                this.sendMessage({ type: 'hideLoader' });
             }
         });
     }
@@ -623,48 +727,52 @@ class BuddyViewProvider {
     const sliderStates = new Map();
 
     function showSlide(sliderId, index) {
-        const container = document.getElementById(sliderId);
-        const cards = container.querySelectorAll('.concept-card');
-        const indicators = container.querySelectorAll('.concept-indicator');
-        
-        if (!sliderStates.has(sliderId)) {
-            sliderStates.set(sliderId, {
-                currentSlide: 0,
-                totalSlides: cards.length
-            });
-        }
-        
-        cards.forEach(card => card.classList.remove('active'));
-        indicators.forEach(indicator => indicator.classList.remove('active'));
-        
+    const container = document.getElementById(sliderId);
+    if (!container) return;
+    
+    const cards = container.querySelectorAll('.concept-card');
+    const indicators = container.querySelectorAll('.concept-indicator');
+    
+    // Ocultar todas las tarjetas y desactivar indicadores
+    cards.forEach(card => {
+        card.classList.remove('active');
+        card.style.display = 'none';
+    });
+    indicators.forEach(indicator => indicator.classList.remove('active'));
+    
+    // Mostrar la tarjeta seleccionada y activar su indicador
+    if (cards[index]) {
         cards[index].classList.add('active');
+        cards[index].style.display = 'flex';
+    }
+    if (indicators[index]) {
         indicators[index].classList.add('active');
-        
-        container.querySelector('.concepts-slider').style.transform = 
-            \`translateX(-\${index * 100}%)\`;
-            
-        sliderStates.get(sliderId).currentSlide = index;
     }
+}
 
-    function nextConcept(sliderId) {
-        const state = sliderStates.get(sliderId);
-        if (!state) return;
-        
-        const nextIndex = (state.currentSlide + 1) % state.totalSlides;
-        showSlide(sliderId, nextIndex);
-    }
+function nextConcept(sliderId) {
+    const container = document.getElementById(sliderId);
+    if (!container) return;
+    
+    const cards = container.querySelectorAll('.concept-card');
+    const currentCard = container.querySelector('.concept-card.active');
+    let currentIndex = Array.from(cards).indexOf(currentCard);
+    
+    const nextIndex = (currentIndex + 1) % cards.length;
+    showSlide(sliderId, nextIndex);
+}
 
-    function prevConcept(sliderId) {
-        const state = sliderStates.get(sliderId);
-        if (!state) return;
-        
-        const prevIndex = (state.currentSlide - 1 + state.totalSlides) % state.totalSlides;
-        showSlide(sliderId, prevIndex);
-    }
-
-    function goToSlide(sliderId, index) {
-        showSlide(sliderId, index);
-    }
+function prevConcept(sliderId) {
+    const container = document.getElementById(sliderId);
+    if (!container) return;
+    
+    const cards = container.querySelectorAll('.concept-card');
+    const currentCard = container.querySelector('.concept-card.active');
+    let currentIndex = Array.from(cards).indexOf(currentCard);
+    
+    const prevIndex = (currentIndex - 1 + cards.length) % cards.length;
+    showSlide(sliderId, prevIndex);
+}
 </script>
         </head>
             <body>
@@ -852,13 +960,19 @@ languageButton?.addEventListener('click', (e) => {
 
 // Event listeners para las opciones de lenguaje
 document.querySelectorAll('#language-options .dropdown-item').forEach(option => {
-    option.addEventListener('click', (e) => {
-        const selectedLanguage = e.target.dataset.language;
-        currentLanguage = selectedLanguage;
-        languageButton.querySelector('span').textContent = e.target.textContent;
-        closeLanguageDropdown();
+        option.addEventListener('click', (e) => {
+            const selectedLanguage = e.currentTarget.dataset.language;
+            currentLanguage = selectedLanguage;
+            languageButton.querySelector('span').textContent = e.currentTarget.textContent.trim();
+            closeLanguageDropdown();
+            
+            // Notificar al backend del cambio de lenguaje
+            vscode.postMessage({
+                type: 'languageChanged',
+                language: selectedLanguage
+            });
+        });
     });
-});
 
 // Actualizar el cierre del dropdown al hacer clic fuera
 document.addEventListener('click', (e) => {
@@ -878,30 +992,36 @@ const questionOptions = document.getElementById('question-options');
 // Función para cerrar el dropdown
 function closeDropdown() {
     if (questionOptions) {
-        questionOptions.classList.add('hidden'); // Oculta el menú
+        questionOptions.classList.add('hidden');
         const arrow = askButton?.querySelector('.dropdown-arrow');
         if (arrow) {
-            arrow.style.transform = 'rotate(0deg)'; // Restaura la flecha
+            arrow.style.transform = 'rotate(0deg)';
         }
     }
 }
 
-// Listener para abrir/cerrar el dropdown
+// Toggle del dropdown de ayuda
 askButton?.addEventListener('click', (e) => {
     e.stopPropagation();
     const isHidden = questionOptions.classList.contains('hidden');
     if (isHidden) {
-        questionOptions.classList.remove('hidden'); // Muestra el menú
+        questionOptions.classList.remove('hidden');
         askButton.querySelector('.dropdown-arrow').style.transform = 'rotate(180deg)';
     } else {
-        closeDropdown(); // Oculta el menú
+        closeDropdown();
     }
 });
 
-// Listener para cerrar el dropdown si se hace clic fuera
+// Eventos de cierre al hacer click fuera
 document.addEventListener('click', (e) => {
+    // Cerrar dropdown de lenguaje
+    if (!languageOptions?.contains(e.target) && !languageButton?.contains(e.target)) {
+        closeLanguageDropdown();
+    }
+    
+    // Cerrar dropdown de preguntas
     if (!questionOptions?.contains(e.target) && !askButton?.contains(e.target)) {
-        closeDropdown(); // Cierra el menú al hacer clic fuera
+        closeDropdown();
     }
 });
 
@@ -916,13 +1036,19 @@ document.addEventListener('click', (e) => {
         });
         return;
     }
-        document.getElementById('loader-container').classList.remove('hidden');
-    vscode.postMessage({ 
+        // Guardar el texto del problema y el lenguaje actual
+    const messageData = {
         type: 'askAIConcept',
-        problemText: getProblemText(),
-        language: currentLanguage // Agregar el lenguaje
-    });
-    document.getElementById('in-progress')?.classList.remove('hidden');
+        problemText: {
+            text: problemText,
+            language: currentLanguage
+        }
+    };
+    
+    console.log('Enviando solicitud de conceptos:', messageData); // Para debugging
+    
+    document.getElementById('loader-container').classList.remove('hidden');
+    vscode.postMessage(messageData);
     closeDropdown();
 });
 
@@ -931,11 +1057,11 @@ document.addEventListener('click', (e) => {
     if (!problemText) {
         vscode.postMessage({ 
             type: 'error',
-            message: 'Por favor, escribe un problema antes de solicitar ejemplos.'
+            message: 'Por favor, escribe un problema antes de solicitar el pseudocódigo y diagrama.'
         });
         return;
     }
-        document.getElementById('loader-container').classList.remove('hidden');
+    document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAIUsage',
         problemText: {
@@ -943,28 +1069,6 @@ document.addEventListener('click', (e) => {
             language: currentLanguage
         }
     });
-    document.getElementById('in-progress')?.classList.remove('hidden');
-    closeDropdown();
-});
-
-document.getElementById('usage-button')?.addEventListener('click', () => {
-    const problemText = getProblemText();
-    if (!problemText) {
-        vscode.postMessage({ 
-            type: 'error',
-            message: 'Por favor, escribe un problema antes de solicitar ejemplos.'
-        });
-        return;
-    }
-        document.getElementById('loader-container').classList.remove('hidden');
-    vscode.postMessage({ 
-        type: 'askAIUsage',
-        problemText: {
-            text: problemText,
-            language: currentLanguage
-        }
-    });
-    document.getElementById('in-progress')?.classList.remove('hidden');
     closeDropdown();
 });
 
@@ -1056,66 +1160,83 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
     // Event listener para mensajes
     window.addEventListener('message', event => {
     const message = event.data;
-    console.log('Mensaje recibido:', message);
-
+    
     switch (message.type) {
+        case 'showLoader':
+            document.getElementById('loader-container')?.classList.remove('hidden');
+            break;
+            
+        case 'hideLoader':
+            document.getElementById('loader-container')?.classList.add('hidden');
+            break;
+            
+        case 'error':
+            document.getElementById('loader-container')?.classList.add('hidden');
+            alert(message.message);
+            break;
+
         case 'updateProblem':
             document.getElementById('problem-text').value = message.text;
             break;
+
+        case 'showProgress':
+            document.getElementById('in-progress')?.classList.remove('hidden');
+            break;
+
+        case 'hideProgress':
+            document.getElementById('in-progress')?.classList.add('hidden');
+            break;
+
         case 'hintResponse':
             const hintDiv = document.createElement('div');
             hintDiv.className = 'buddy-response-card';
-            hintDiv.innerHTML = message.valueHtml; // Usar el HTML generado por el backend
-            qaList.insertBefore(hintDiv, qaList.firstChild); // Insertar al inicio de la lista
+            hintDiv.innerHTML = message.valueHtml;
+            qaList.insertBefore(hintDiv, qaList.firstChild);
             qaList.scrollTo({
                 top: 0,
                 behavior: 'smooth'
             });
             break;
-        
-        case 'error':
-            alert(message.message);
-            break;
-        case 'showProgress':
-            document.getElementById('in-progress')?.classList.remove('hidden');
-            break;
-        case 'hideProgress':
-            document.getElementById('in-progress')?.classList.add('hidden');
-            break;
+
         case 'addDetail':
         case 'addOverview':
         case 'solutionResponse':
         case 'followUpResponse':
             if (qaList) {
+                // Procesar respuesta específica para conceptos
+                if (message.detailType === 'concept') {
+                    console.log('Recibiendo respuesta de conceptos:', message);
+                    
+                    if (!message.valueHtml) {
+                        console.error('No hay contenido HTML en la respuesta');
+                        return;
+                    }
+                }
+
                 const responseDiv = document.createElement('div');
                 responseDiv.className = 'buddy-response-card';
                 responseDiv.innerHTML = message.valueHtml;
                 
-                // Para followUpResponse, configurar los event listeners de los botones
-        if (message.type === 'followUpResponse') {
-            responseDiv.querySelectorAll('.show-answer-button').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    const answerDiv = this.parentElement.nextElementSibling;
-                    answerDiv.classList.toggle('hidden');
-                    this.textContent = answerDiv.classList.contains('hidden') ? 
-                        'Ver respuesta' : 'Ocultar respuesta';
+                // Configurar botones para followUpResponse
+                if (message.type === 'followUpResponse') {
+                    responseDiv.querySelectorAll('.show-answer-button').forEach(button => {
+                        button.addEventListener('click', function(e) {
+                            const answerDiv = this.parentElement.nextElementSibling;
+                            answerDiv.classList.toggle('hidden');
+                            this.textContent = answerDiv.classList.contains('hidden') ?
+                                'Ver respuesta' : 'Ocultar respuesta';
+                        });
+                    });
+                }
+
+                // Insertar al principio y hacer scroll
+                qaList.insertBefore(responseDiv, qaList.firstChild);
+                qaList.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
                 });
-            });
-        }
-        
-        // Insertar la nueva respuesta al principio
-        qaList.insertBefore(responseDiv, qaList.firstChild);
-        
-        // Hacer scroll suave al principio
-        qaList.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    }
-    document.getElementById('in-progress')?.classList.add('hidden');
-    break;
-        case 'error':
-            alert(message.message);
+            }
+            document.getElementById('in-progress')?.classList.add('hidden');
             break;
     }
 });

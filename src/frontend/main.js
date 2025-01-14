@@ -57,27 +57,33 @@ const qaList = document.getElementById("qa-list");
  
      // Event listener para el botón de lenguaje
      languageButton?.addEventListener('click', (e) => {
-         e.stopPropagation();
-         const isHidden = languageOptions.classList.contains('hidden');
-         const arrow = languageButton.querySelector('.dropdown-arrow');
-         
-         if (isHidden) {
-             languageOptions.classList.remove('hidden');
-             arrow.style.transform = 'rotate(180deg)';
-         } else {
-             closeLanguageDropdown();
-         }
-     });
+        e.stopPropagation();
+        const isHidden = languageOptions.classList.contains('hidden');
+        const arrow = languageButton.querySelector('.dropdown-arrow');
+        
+        if (isHidden) {
+            languageOptions.classList.remove('hidden');
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            closeLanguageDropdown();
+        }
+    });
  
      // Event listeners para las opciones de lenguaje
      document.querySelectorAll('#language-options .dropdown-item').forEach(option => {
-         option.addEventListener('click', (e) => {
-             const language = e.target.dataset.language;
-             currentLanguage = language;
-             languageButton.querySelector('span').textContent = e.target.textContent;
-             closeLanguageDropdown();
-         });
-     });
+        option.addEventListener('click', (e) => {
+            const selectedLanguage = e.currentTarget.dataset.language;
+            currentLanguage = selectedLanguage;
+            languageButton.querySelector('span').textContent = e.currentTarget.textContent.trim();
+            closeLanguageDropdown();
+            
+            // Notificar al backend del cambio de lenguaje
+            vscode.postMessage({
+                type: 'languageChanged',
+                language: selectedLanguage
+            });
+        });
+    });
  
      // Cerrar dropdown de lenguaje al hacer click fuera
      document.addEventListener('click', (e) => {

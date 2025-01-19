@@ -6,8 +6,6 @@
 
 </div>
 
-
-
 <div align="center">
 <table>
 <tbody>
@@ -21,63 +19,64 @@
 </table>
 </div>
 
+<div align="center">
+  <img
+    max-width="400"
+    width="45%"
+    src="extension/media/lenguaje.png"
+    alt="lenguaje"
+  >
+  <img
+    max-width="400"
+    width="45%"
+    src="extension/media/Ayuda.png"
+    alt="ayuda"
+  >
+</div>
+
 ---
 
-<img align="right" width="340" src="https://github.com/user-attachments/assets/3cf21e04-7ce9-4d22-a7b9-ba2c595e88a4">
+### Conceptos clave
 
-### Explica conceptos clave
+El asistente ofrece definiciones concisas y claras de conceptos fundamentales de programación directamente relacionados con el problema planteado. Estas definiciones complementan las explicaciones del instructor en clase, ayudando a los estudiantes a comprender mejor los conceptos.
 
-Cline supports API providers like OpenRouter, Anthropic, OpenAI, Google Gemini, AWS Bedrock, Azure, and GCP Vertex. You can also configure any OpenAI compatible API, or use a local model through LM Studio/Ollama. If you're using OpenRouter, the extension fetches their latest model list, allowing you to use the newest models as soon as they're available.
+<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
+<img align="right" width="340" src="extension/media/Conceptos.png">
 
-The extension also keeps track of total tokens and API usage cost for the entire task loop and individual requests, keeping you informed of spend every step of the way.
+### Ejemplos en pseudocódigo y diagrama de flujo
 
-<img align="right" width="340" src="https://github.com/user-attachments/assets/3cf21e04-7ce9-4d22-a7b9-ba2c595e88a4">
+El asistente crea un ejemplo en pseudocódigo, acompañado de un diagrama de flujo, que ilustra la solución al problema planteado. Este enfoque permite comprender el problema de manera más clara al descomponerlo en pasos lógicos y visualizar su solución de forma estructurada.
 
-### Obtienes ejemplos en pseudocódigo y diagrama de flujo
+<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
+<img align="right" width="400" src="extension/media/diagrama.png">
 
-Thanks to the new [shell integration updates in VSCode v1.93](https://code.visualstudio.com/updates/v1_93#_terminal-shell-integration-api), Cline can execute commands directly in your terminal and receive the output. This allows him to perform a wide range of tasks, from installing packages and running build scripts to deploying applications, managing databases, and executing tests, all while adapting to your dev environment & toolchain to get the job done right.
+### Pistas para empezar
 
-For long running processes like dev servers, use the "Proceed While Running" button to let Cline continue in the task while the command runs in the background. As Cline works he’ll be notified of any new terminal output along the way, letting him react to issues that may come up, such as compile-time errors when editing files.
+El asistente ofrece al usuario una lista enumerada con tres pasos o pistas iniciales para abordar el problema. Estas indicaciones están diseñadas para orientar al usuario en cómo comenzar la solución y estructurar su enfoque de manera lógica.
 
-<img align="right" width="400" src="https://github.com/user-attachments/assets/c5977833-d9b8-491e-90f9-05f9cd38c588">
+<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
+<img align="left" width="370" src="extension/media/pistas.png">
 
-### Solicita pistas para empezar
+### Sugerencias para el próximo paso
 
-Cline can create and edit files directly in your editor, presenting you a diff view of the changes. You can edit or revert Cline's changes directly in the diff view editor, or provide feedback in chat until you're satisfied with the result. Cline also monitors linter/compiler errors (missing imports, syntax errors, etc.) so he can fix issues that come up along the way on his own.
+El asistente proporciona sugerencias específicas para el siguiente paso en el desarrollo del código, adaptadas al contexto del fragmento seleccionado por el usuario. Estas recomendaciones ayudan al usuario a avanzar en la resolución del problema, especialmente cuando no sabe cómo proceder o se encuentra atascado, guiándolo de manera práctica.
 
-All changes made by Cline are recorded in your file's Timeline, providing an easy way to track and revert modifications if needed.
+<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
+<img align="right" width="350" src="extension/media/NextStep.png">
 
-<img align="left" width="370" src="https://github.com/user-attachments/assets/bc2e85ba-dfeb-4fe6-9942-7cfc4703cbe5">
+### Explicación de la solución
 
-### Obtienes sugerencias para el próximo paso
+El asistente ofrece una explicación detallada de una solución posible, desglosando paso a paso el funcionamiento y la lógica que sustentan una respuesta correcta. Esto permite al usuario comprender profundamente el razonamiento detrás de la solución, independientemente de si su intento previo fue acertado o no, fortaleciendo así su conocimiento y habilidades en programación.
 
-With Claude 3.5 Sonnet's new [Computer Use](https://www.anthropic.com/news/3-5-models-and-computer-use) capability, Cline can launch a browser, click elements, type text, and scroll, capturing screenshots and console logs at each step. This allows for interactive debugging, end-to-end testing, and even general web use! This gives him autonomy to fixing visual bugs and runtime issues without you needing to handhold and copy-pasting error logs yourself.
+<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
+<img align="left" width="360" src="extension/media/solucion.png">
 
-Try asking Cline to "test the app", and watch as he runs a command like `npm run dev`, launches your locally running dev server in a browser, and performs a series of tests to confirm that everything works. [See a demo here.](https://x.com/sdrzn/status/1850880547825823989)
+### Preguntas de seguimiento
 
-<img align="right" width="350" src="https://github.com/user-attachments/assets/ac0efa14-5c1f-4c26-a42d-9d7c56f5fadd">
+El asistente formula tres preguntas de seguimiento relacionadas con el problema planteado, acompañadas de sus respectivas respuestas. Este enfoque fomenta una exploración más profunda del tema y ayuda al usuario a reflexionar sobre diferentes aspectos del problema, promoviendo un aprendizaje más integral.
 
-### Te explica la solución
-
-Thanks to the [Model Context Protocol](https://github.com/modelcontextprotocol), Cline can extend his capabilities through custom tools. While you can use [community-made servers](https://github.com/modelcontextprotocol/servers), Cline can instead create and install tools tailored to your specific workflow. Just ask Cline to "add a tool" and he will handle everything, from creating a new MCP server to installing it into the extension. These custom tools then become part of Cline's toolkit, ready to use in future tasks.
-
--   "add a tool that fetches Jira tickets": Retrieve ticket ACs and put Cline to work
--   "add a tool that manages AWS EC2s": Check server metrics and scale instances up or down
--   "add a tool that pulls the latest PagerDuty incidents": Fetch details and ask Cline to fix bugs
-
-<img align="left" width="360" src="https://github.com/user-attachments/assets/7fdf41e6-281a-4b4b-ac19-020b838b6970">
-
-### Te hace preguntas de seguimiento
-
-**`@url`:** Paste in a URL for the extension to fetch and convert to markdown, useful when you want to give Cline the latest docs
-
-**`@problems`:** Add workspace errors and warnings ('Problems' panel) for Cline to fix
-
-**`@file`:** Adds a file's contents so you don't have to waste API requests approving read file (+ type to search files)
-
-**`@folder`:** Adds folder's files all at once to speed up your workflow even more
-
-<img align="right" width="350" src="https://github.com/user-attachments/assets/140c8606-d3bf-41b9-9a1f-4dbf0d4c90cb">
+<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
+<img align="right" width="350" src="extension/media/FollowUp.png">
 
 ## Contacto
 💬 Por favor escribe [aquí](mailto:danielprolperez@gmail.com) para cualquier pregunta o sugerencia.

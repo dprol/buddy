@@ -3,7 +3,10 @@
     "displayName": "buddy",
     "description": "buddy es un asistente de IA para VS Code para estudiantes universitarios que están aprendiendo programación básica. Proporciona explicaciones claras del código y ejemplos prácticos, ayudando a los estudiantes a comprender mejor los conceptos fundamentales de programación.",
     "version": "0.0.2",
-    "repository": "https://github.com/dprol/buddy",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dprol/buddy.git"
+    },
     "icon": "extension/media/icon.png",
     "engines": {
         "vscode": "^1.95.0"

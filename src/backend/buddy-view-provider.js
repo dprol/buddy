@@ -622,18 +622,15 @@ updateLanguage(language) {
         
         if (queryType === "askAIConcept") {
             const concepts = [];
-            const conceptPairs = output.split(/(?=CONCEPTO:)/g);
+            const conceptPairs = output.split(/CONCEPTO:/g).filter(Boolean);
             
             for (const pair of conceptPairs) {
-                if (!pair.trim()) continue;
+                const explanationMatch = pair.match(/\s*(.*?)\s*EXPLICACIÓN:\s*([\s\S]*?)(?=(?:\s*CONCEPTO:|$))/i);
                 
-                const conceptMatch = pair.match(/CONCEPTO:\s*(.*?)\s*(?=EXPLICACIÓN:|$)/is);
-                const explanationMatch = pair.match(/EXPLICACIÓN:\s*([\s\S]*?)(?=(?:\s*CONCEPTO:|$))/is);
-                
-                if (conceptMatch && explanationMatch) {
+                if (explanationMatch) {
                     concepts.push({
-                        title: conceptMatch[1].trim(),
-                        content: explanationMatch[1].trim()
+                        title: explanationMatch[1].trim(),
+                        content: explanationMatch[2].trim()
                     });
                 }
             }
@@ -650,8 +647,8 @@ updateLanguage(language) {
                         `).join('')}
                     </div>
                     <div class="concepts-navigation">
-                        <button class="concept-nav-button prev" onclick="prevSlide('${sliderId}')">←</button>
-                        <button class="concept-nav-button next" onclick="nextSlide('${sliderId}')">→</button>
+                        <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
+                        <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
                     </div>
                     <div class="concepts-indicators">
                         ${concepts.map((_, index) => `
@@ -683,26 +680,6 @@ updateLanguage(language) {
                     </div>
                 </div>`;
         } else {
-            valueHtml = Marked.parse(output);
-        }
-    
-        this.sendMessage({
-            type: 'addDetail',
-            value: output,
-            queryId: queryType === "askAIQuery" ? this.overviewId : queryId,
-            detailType: detailType,
-            valueHtml: valueHtml
-        });
-    
-        if (queryType === "askAIQuery") {
-            this.updateChatHistory(prompt, output, editorSelectedText);
-        } else {
-            this.previousChat.push(
-                { "role": "user", "content": prompt },
-                { "role": "assistant", "content": output }
-            );
-        }
-    {
             valueHtml = Marked.parse(output);
         }
     
@@ -850,52 +827,55 @@ updateLanguage(language) {
     }
 
     function showSlide(sliderId, index) {
-    const container = document.getElementById(sliderId);
-    if (!container) return;
-    
-    const cards = container.querySelectorAll('.concept-card');
-    const indicators = container.querySelectorAll('.concept-indicator');
-    
-    // Ocultar todas las tarjetas y desactivar indicadores
-    cards.forEach(card => {
-        card.classList.remove('active');
-        card.style.display = 'none';
-    });
+        const container = document.getElementById(sliderId);
+        if (!container) return;
+
+        const cards = container.querySelectorAll('.concept-card');
+        const indicators = container.querySelectorAll('.concept-indicator');
+
+        cards.forEach(card => {
+            card.classList.remove('active');
+            card.style.display = 'none';
+        });
     indicators.forEach(indicator => indicator.classList.remove('active'));
-    
-    // Mostrar la tarjeta seleccionada y activar su indicador
-    if (cards[index]) {
-        cards[index].classList.add('active');
-        cards[index].style.display = 'flex';
-    }
-    if (indicators[index]) {
-        indicators[index].classList.add('active');
-    }
-}
 
-function nextConcept(sliderId) {
-    const container = document.getElementById(sliderId);
-    if (!container) return;
-    
-    const cards = container.querySelectorAll('.concept-card');
-    const currentCard = container.querySelector('.concept-card.active');
-    let currentIndex = Array.from(cards).indexOf(currentCard);
-    
-    const nextIndex = (currentIndex + 1) % cards.length;
-    showSlide(sliderId, nextIndex);
-}
+        if (cards[index]) {
+            cards[index].classList.add('active');
+            cards[index].style.display = 'flex';
+        }
+        
+        if (indicators[index]) {
+            indicators[index].classList.add('active');
+        }
+    }
 
-function prevConcept(sliderId) {
-    const container = document.getElementById(sliderId);
-    if (!container) return;
-    
-    const cards = container.querySelectorAll('.concept-card');
-    const currentCard = container.querySelector('.concept-card.active');
-    let currentIndex = Array.from(cards).indexOf(currentCard);
-    
-    const prevIndex = (currentIndex - 1 + cards.length) % cards.length;
-    showSlide(sliderId, prevIndex);
-}
+function goToSlide(sliderId, index) {
+        showSlide(sliderId, index);
+    }
+
+    function nextConcept(sliderId) {
+        const container = document.getElementById(sliderId);
+        if (!container) return;
+
+        const cards = container.querySelectorAll('.concept-card');
+        const currentCard = container.querySelector('.concept-card.active');
+        let currentIndex = Array.from(cards).indexOf(currentCard);
+        
+        const nextIndex = (currentIndex + 1) % cards.length;
+        showSlide(sliderId, nextIndex);
+    }
+
+    function prevConcept(sliderId) {
+        const container = document.getElementById(sliderId);
+        if (!container) return;
+
+        const cards = container.querySelectorAll('.concept-card');
+        const currentCard = container.querySelector('.concept-card.active');
+        let currentIndex = Array.from(cards).indexOf(currentCard);
+        
+        const prevIndex = (currentIndex - 1 + cards.length) % cards.length;
+        showSlide(sliderId, prevIndex);
+    }
 </script>
         </head>
             <body>
@@ -1218,6 +1198,7 @@ document.getElementById('hint-button')?.addEventListener('click', () => {
 });
 
 document.getElementById('next-step-button')?.addEventListener('click', () => {
+    document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage({ 
         type: 'askAINextStep',
         problemText: {

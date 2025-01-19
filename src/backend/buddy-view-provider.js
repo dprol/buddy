@@ -483,36 +483,25 @@ updateLanguage(language) {
         let assistantPrompt = '';
     
         if (queryType === 'askAIUsage') {
-            prompt = `Analiza el siguiente problema y genera dos partes:
-        
-            1. Un pseudocódigo claro y detallado que resuelva el problema.
+            prompt = `Genera únicamente y sin explicaciones adicionales:
+            
+            1. Un pseudocódigo específico para ${language} que resuelva el problema.
             2. Un diagrama de flujo usando notación UML que represente la solución.
             
-            Para el diagrama usa este formato exacto:
+            Usa exactamente este formato:
+            
+            Pseudocódigo:
+            [pseudocódigo en ${language}]
         
+            Diagrama de flujo:
             @startuml
             start
-            :Inicializar lista_pares;
-            repeat
-              :Solicitar valor de x;
-            repeat while (x <= 0)
-            repeat
-              :Solicitar valor de y;
-            repeat while (y <= x)
-            :Recorrer de x a y;
-            while (hay más números?) is (sí)
-              if (número es par?) then (sí)
-                :Agregar a lista_pares;
-              endif
-            endwhile (no)
-            :Mostrar lista_pares;
+            [diagrama de flujo]
             stop
             @enduml
         
             El problema a resolver es:
-            ${text}
-            
-            Lenguaje a usar: ${language}`;
+            ${text}`;
             
             assistantPrompt = "Aquí tienes el pseudocódigo y diagrama de flujo:";
         } else if (queryType === 'askAINextStep') {
@@ -526,16 +515,16 @@ updateLanguage(language) {
                 throw new Error('Por favor, selecciona el código del que quieres saber el siguiente paso.');
             }
         
-            prompt = `Analiza el siguiente código en ${problemText.language} y proporciona solo el siguiente paso en el problema sin revelar la solución. Incluye el fragmento de código seleccionado y la sugerencia sin ningún otro comentario.\n\nCódigo actual:\n${selectedText}`;
+            prompt = `Analiza el siguiente código en ${language} y proporciona solo el siguiente paso en el problema sin revelar la solución. Incluye el fragmento de código seleccionado y la sugerencia sin ningún otro comentario.\n\nCódigo actual:\n${selectedText}`;
             assistantPrompt = "Aquí tienes las sugerencias para el siguiente paso:".trim();
         } else if (queryType === 'askAIConcept') {
             prompt = `Analiza el siguiente problema y proporciona exactamente 3 definiciones de los conceptos clave de programación presentes.
-            Si es un concepto específico del lenguaje ${problemText.language}, incluye ejemplos en ese lenguaje.
+            Si es un concepto específico del lenguaje ${language}, incluye ejemplos en ese lenguaje.
             
             Usa EXACTAMENTE este formato para cada concepto, incluyendo los marcadores CONCEPTO: y EXPLICACIÓN::
         
             CONCEPTO: [nombre del concepto]
-            EXPLICACIÓN: [explicación detallada]
+            EXPLICACIÓN: [explicación detallada adaptada al lenguaje ${language}]
         
             Asegúrate de dejar una línea en blanco entre cada concepto.
         
@@ -636,49 +625,68 @@ updateLanguage(language) {
             }
             
             const sliderId = `concept-slider-${Date.now()}`;
-            valueHtml = `
-                <div class="concepts-container" id="${sliderId}">
-                    <div class="concepts-slider">
-                        ${concepts.map((concept, index) => `
-                            <div class="concept-card ${index === 0 ? 'active' : ''}" data-index="${index}">
-                                <h3 class="concept-title">${concept.title}</h3>
-                                <div class="concept-content">${Marked.parse(concept.content)}</div>
-                            </div>
-                        `).join('')}
+valueHtml = `
+    <div class="concepts-container" id="${sliderId}">
+        <div class="concepts-slider">
+            ${concepts.map((concept, index) => {
+                const formattedContent = concept.content.replace(
+                    /```(\w+)?\s*([\s\S]*?)```/g,
+                    (_, lang, code) => `<pre><code class="language-${this.currentLanguage}">${code.trim()}</code></pre>`
+                );
+                return `
+                    <div class="concept-card ${index === 0 ? 'active' : ''}" data-index="${index}">
+                        <h3 class="concept-title">${concept.title}</h3>
+                        <div class="concept-content">${formattedContent}</div>
                     </div>
-                    <div class="concepts-navigation">
-                        <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
-                        <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
-                    </div>
-                    <div class="concepts-indicators">
-                        ${concepts.map((_, index) => `
-                            <button class="concept-indicator ${index === 0 ? 'active' : ''}"
-                                    data-index="${index}"
-                                    onclick="goToSlide('${sliderId}', ${index})"></button>
-                        `).join('')}
-                    </div>
-                </div>`;
+                `;
+            }).join('')}
+        </div>
+        <div class="concepts-navigation">
+            <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
+            <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
+        </div>
+        <div class="concepts-indicators">
+            ${concepts.map((_, index) => `
+                <button class="concept-indicator ${index === 0 ? 'active' : ''}"
+                        data-index="${index}"
+                        onclick="goToSlide('${sliderId}', ${index})"></button>
+            `).join('')}
+        </div>
+    </div>`;
         } else if (queryType === "askAIUsage") {
             const pseudoMatch = output.match(/Pseudocódigo:([\s\S]*?)(?=Diagrama de flujo:|$)/i);
             const diagramMatch = output.match(/Diagrama de flujo:([\s\S]*?)(?=@startuml|$)/i);
             const umlMatch = output.match(/@startuml([\s\S]*?)@enduml/i);
             
             const pseudocode = pseudoMatch ? pseudoMatch[1].trim() : '';
-            const diagramIntro = diagramMatch ? diagramMatch[1].trim() : '';
             const umlDiagram = umlMatch ? umlMatch[1].trim() : '';
             
-            valueHtml = `
-                <div class="usage-content">
-                    <div class="usage-section">
-                        <h3 class="usage-title">Pseudocódigo</h3>
+            const sliderId = `usage-slider-${Date.now()}`;
+    valueHtml = `
+        <div class="concepts-container" id="${sliderId}">
+            <div class="concepts-slider">
+                <div class="concept-card solution-card active" data-index="0">
+                    <h3 class="concept-title">Pseudocódigo</h3>
+                    <div class="solution-content">
                         <pre><code class="language-${this.currentLanguage}">${pseudocode}</code></pre>
                     </div>
-                    <div class="usage-section">
-                        <h3 class="usage-title">Diagrama de Flujo</h3>
-                        ${diagramIntro ? `<p>${diagramIntro}</p>` : ''}
+                </div>
+                <div class="concept-card solution-card" data-index="1">
+                    <h3 class="concept-title">Diagrama de Flujo</h3>
+                    <div class="solution-content">
                         <pre class="uml-diagram">${umlDiagram}</pre>
                     </div>
-                </div>`;
+                </div>
+            </div>
+            <div class="concepts-navigation">
+                <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
+                <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
+            </div>
+            <div class="concepts-indicators">
+                <button class="concept-indicator active" data-index="0" onclick="goToSlide('${sliderId}', 0)"></button>
+                <button class="concept-indicator" data-index="1" onclick="goToSlide('${sliderId}', 1)"></button>
+            </div>
+        </div>`;
         } else {
             valueHtml = Marked.parse(output);
         }

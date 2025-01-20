@@ -2,14 +2,14 @@
 <img src="extension/media/readme.jpg" alt="buddy logo">
 <h1>buddy: tu compañero en tus primeros pasos en la programación </h1>
 
-*buddy* es una extensión de VS Code que ayuda a los estudiantes a comprender mejor los problemas de programación. Funciona con Claude 3.5 Sonnet de Anthropic.
+*Buddy* es una extensión de VS Code que ayuda a los estudiantes a comprender mejor los problemas de programación. Funciona con Claude 3.5 Sonnet de Anthropic.
 </div>
 
 <div align="center">
 <table>
 <tbody>
 <td align="center">
-<a href="https://marketplace.visualstudio.com" target="_blank"><strong>Descarga Buddy en el VS Marketplace</strong></a>
+<a href="https://marketplace.visualstudio.com/items?itemName=dprol.BuddyAI" target="_blank"><strong>Descarga Buddy en el VS Marketplace</strong></a>
 </td>
 <td align="center">
 <a href="#" target="_blank"><strong>Documentación</strong></a>

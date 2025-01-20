@@ -1,6 +1,6 @@
 {
-    "name": "Buddy",
-    "displayName": "Buddy - Asistente de Programación",
+    "name": "BuddyAI",
+    "displayName": "Buddy AI - Asistente de Programación",
     "description": "Buddy es una extensión de VS Code que ayuda a los estudiantes a comprender mejor los problemas de programación.",
     "version": "0.0.2",
     "repository": {
@@ -13,7 +13,7 @@
     },
     "categories": [
         "Education",
-        "Programming"
+        "Programming Languages"
     ],
     "keywords": [
         "AI",

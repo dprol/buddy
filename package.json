@@ -1,7 +1,7 @@
 {
-    "name": "buddy",
-    "displayName": "buddy",
-    "description": "buddy es un asistente de IA para VS Code para estudiantes universitarios que están aprendiendo programación básica. Proporciona explicaciones claras del código y ejemplos prácticos, ayudando a los estudiantes a comprender mejor los conceptos fundamentales de programación.",
+    "name": "Buddy",
+    "displayName": "Buddy - Asistente de Programación",
+    "description": "Buddy es una extensión de VS Code que ayuda a los estudiantes a comprender mejor los problemas de programación.",
     "version": "0.0.2",
     "repository": {
         "type": "git",

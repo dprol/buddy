@@ -1,8 +1,8 @@
 {
-    "name": "BuddyAI",
-    "displayName": "Buddy AI - Asistente de Programación",
+    "name": "buddy-ai",
+    "displayName": "Buddy AI - Asistente de Programación para Estudiantes",
     "description": "Buddy es una extensión de VS Code que ayuda a los estudiantes a comprender mejor los problemas de programación.",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "repository": {
         "type": "git",
         "url": "https://github.com/dprol/buddy.git"
@@ -25,10 +25,9 @@
         "Claude",
         "asistente"
     ],
-    "activationEvents": [
-        "onStartupFinished",
-        "onView:BuddyAI-vscode-plugin"
-    ],
+   "activationEvents": [
+    "onStartupFinished"
+],
     "main": "./src/backend/extension.js",
     "contributes": {
         "commands": [

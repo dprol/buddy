@@ -26,19 +26,19 @@
         "asistente"
     ],
     "activationEvents": [
-    "onStartupFinished",
-    "onView:buddy-vscode-plugin.view"
-],
+        "onStartupFinished",
+        "onView:BuddyAI-vscode-plugin"
+    ],
     "main": "./src/backend/extension.js",
     "contributes": {
         "commands": [
             {
-                "command": "buddy.updateAnthropicKey",
+                "command": "BuddyAI.updateAnthropicKey",
                 "title": "Actualizar Clave API de Anthropic",
                 "icon": "$(key)"
             },
             {
-                "command": "buddy.removeAnthropicKey",
+                "command": "BuddyAI.removeAnthropicKey",
                 "title": "Eliminar Clave API de Anthropic",
                 "icon": "$(trash)"
             }
@@ -46,7 +46,7 @@
         "configuration": {
             "title": "Buddy AI",
             "properties": {
-                "buddy.aiProvider": {
+                "BuddyAI.aiProvider": {
                     "type": "string",
                     "enum": [
                         "anthropic"
@@ -54,18 +54,18 @@
                     "default": "anthropic",
                     "description": "Proveedor de IA a utilizar"
                 },
-                "buddy.anthropic.model": {
+                "BuddyAI.anthropic.model": {
                     "type": "string",
                     "default": "claude-3-5-sonnet-20241022",
                     "description": "Modelo de Anthropic a utilizar"
                 },
-                "buddy.maxTokens": {
+                "BuddyAI.maxTokens": {
                     "type": "number",
                     "default": 2000,
                     "minimum": 1,
                     "description": "Número máximo de tokens por solicitud"
                 },
-                "buddy.temperature": {
+                "BuddyAI.temperature": {
                     "type": "number",
                     "default": 0.5,
                     "minimum": 0,
@@ -75,23 +75,23 @@
             }
         },
         "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "buddy-vscode-plugin",
-                    "title": "Buddy",
-                    "icon": "extension/media/icon.png"
-                }
-            ]
-        },
-        "views": {
-            "buddy-vscode-plugin": [
-                {
-                    "type": "webview",
-                    "id": "buddy-vscode-plugin.view",
-                    "name": "Buddy"
-                }
-            ]
+    "activitybar": [
+        {
+            "id": "BuddyAI-vscode-plugin",
+            "title": "Buddy AI",
+            "icon": "extension/media/icon.png"
         }
+    ]
+},
+"views": {
+    "BuddyAI-vscode-plugin": [
+        {
+            "type": "webview",
+            "id": "BuddyAI-vscode-plugin",
+            "name": "Buddy AI"
+        }
+    ]
+}
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",

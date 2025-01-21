@@ -1,14 +1,10 @@
 "use strict";
 
-// Manera correcta de importar en CommonJS
 const vscode = require("vscode");
 const { Anthropic } = require("@anthropic-ai/sdk");
 const utils = require("./utils");
 const { Marked, Renderer } = require("@ts-stack/markdown");
 const hljs = require("highlight.js");
-const React = require('react');
-const ReactDOM = require('react-dom');
-const ConceptSlider = require('../componentes/ConceptSlider');
 
 /**
  * Clase para renderizar markdown con soporte de resaltado de sintaxis.

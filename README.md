@@ -12,7 +12,7 @@
 <a href="https://marketplace.visualstudio.com/items?itemName=dprol.BuddyAI" target="_blank"><strong>Descarga Buddy en el VS Marketplace</strong></a>
 </td>
 <td align="center">
-<a href="#" target="_blank"><strong>Documentación</strong></a>
+<a href="https://buddy-a805c3e6.mintlify.app/" target="_blank"><strong>Documentación</strong></a>
 </td>
 </tbody>
 </table>

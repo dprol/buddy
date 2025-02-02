@@ -189,11 +189,12 @@ class AnthropicProvider extends AIProvider {
      * @private
      */
     createPayload(messages, options) {
+        const config = vscode.workspace.getConfiguration('BuddyAI');
         return {
             model: this.model,
             messages: this.formatMessages(messages),
-            max_tokens: options.maxTokens || this.getModelLimits().maxTokens,
-            temperature: options.temperature || 0.7,
+            max_tokens: options.maxTokens || config.get('maxTokens'),
+            temperature: options.temperature || config.get('temperature'),
             top_p: options.topP || 1,
             stream: false,
             system: options.system || "Eres un asistente experto para desarrolladores.",

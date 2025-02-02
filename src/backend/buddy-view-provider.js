@@ -503,16 +503,24 @@ updateLanguage(language) {
         } else if (queryType === 'askAINextStep') {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
-                throw new Error('No hay editor activo. Por favor, abre un archivo de código.');
+                this.sendMessage({
+                    type: 'error',
+                    message: 'No hay editor activo. Por favor, abre un archivo de código.'
+                });
+                return;
             }
         
             const selectedText = editor.document.getText(editor.selection);
             if (!selectedText) {
-                throw new Error('Por favor, selecciona el código del que quieres saber el siguiente paso.');
+                this.sendMessage({
+                    type: 'error',
+                    message: '⚠️ Por favor, selecciona el código del que quieres saber el siguiente paso.'
+                });
+                return;
             }
         
-            prompt = `Analiza el siguiente código en ${language} y proporciona solo el siguiente paso en el problema sin revelar la solución. Incluye el fragmento de código seleccionado y la sugerencia sin ningún otro comentario.\n\nCódigo actual:\n${selectedText}`;
-            assistantPrompt = "Aquí tienes las sugerencias para el siguiente paso:".trim();
+            prompt = `Analiza este código en ${language} y sugiere ÚNICAMENTE el siguiente fragmento de código más fácil de entender (de máximo una línea) que debería añadirse, sin explicaciones ni comentarios adicionales. Solo proporciona el código en un bloque de código de ${language}.\n\nCódigo actual:\n${selectedText}`;
+            assistantPrompt = "Siguiente paso:".trim();
         } else if (queryType === 'askAIConcept') {
             prompt = `Analiza el siguiente problema y proporciona exactamente 3 definiciones de los conceptos clave de programación presentes.
             Si es un concepto específico del lenguaje ${language}, incluye ejemplos en ese lenguaje.

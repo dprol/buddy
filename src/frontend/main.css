@@ -1,12 +1,32 @@
+/* DESPUÉS - Nuevas variables adaptativas */
 :root {
+    /* Se mantienen las variables base */
     --buddy-primary: #DC1436;
     --buddy-secondary: #FF4B4B;
-    --buddy-background: #F7F9FC;
-    --buddy-text: #1A2837;
-    --buddy-border: #D1D5DB;
     --buddy-accent: #FFD6D6;
-    --container-width: 400px;
-    --container-padding: 20px;
+    
+    /* Nuevas variables que usan las propiedades de VS Code */
+    --buddy-background: var(--vscode-editor-background, #F7F9FC);
+    --buddy-text: var(--vscode-editor-foreground, #1A2837);
+    --buddy-border: var(--vscode-input-border, #D1D5DB);
+    --buddy-card-bg: var(--vscode-editor-background);
+    --buddy-hover-bg: var(--vscode-list-hoverBackground);
+}
+
+.buddy-error-message {
+    background-color: var(--buddy-primary);
+    color: white;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.buddy-error-message::before {
+    content: "⚠️";
 }
 
 /* Estilos base */
@@ -15,7 +35,7 @@ body {
     color: var(--buddy-text);
     font-size: 16px;
     font-weight: 400;
-    font-family: 'Roboto', Arial, sans-serif;
+    font-family: var(--vscode-font-family, 'Roboto', Arial, sans-serif);
     background-color: var(--buddy-background);
 }
 
@@ -24,10 +44,10 @@ body {
     font-size: 1rem; /* Tamaño de texto reducido */
     font-weight: 500; /* Bold ligero */
     padding: 8px 16px; /* Reducir padding para ahorrar espacio */
-    background-color: #DC1436; /* Mismo color */
+    background-color: var(--buddy-primary);
     border: none;
     border-radius: 8px;
-    color: white;
+    color: var(--vscode-button-foreground);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -40,7 +60,7 @@ body {
 
 #ask-button:hover,
 .language-button:hover {
-    background-color: #FF4B4B;
+    background-color: var(--buddy-secondary);
 }
 
 .flex.flex-col.h-screen {
@@ -66,7 +86,7 @@ body {
     padding: 0.5rem;
     border: 1px solid var(--buddy-border);
     border-radius: 8px;
-    background-color: var(--vscode-editor-background);
+    background-color: var(--buddy-card-bg);
     overflow: hidden;
     max-width: 100%;
     box-sizing: border-box;
@@ -223,7 +243,7 @@ img, video, svg {
     top: calc(100% + 4px);
     left: 0;
     min-width: 250px; /* Aumentado para dar más espacio */
-    background-color: white;
+    background-color: var(--vscode-editor-background) !important;
     border: 1px solid var(--buddy-border);
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -232,6 +252,7 @@ img, video, svg {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
+    color: var(--buddy-text);
 }
 
 /* Elementos del dropdown */
@@ -269,7 +290,7 @@ img, video, svg {
 
 /* Hover efecto para las opciones */
 .dropdown-item:hover {
-    background-color: var(--buddy-accent);
+    background-color: var(--buddy-hover-bg);
 }
 
 .dropdown-toggle:hover {
@@ -321,20 +342,26 @@ img, video, svg {
     justify-content: center;
     border-radius: 8px;
     margin-left: auto;
-    background: transparent;  /* Fondo transparente */
-    border: none;            /* Sin borde */
+    background: var(--vscode-editor-background);  /* Fondo igual que el editor */
+    border: 1px solid var(--buddy-border);        /* Agregar un borde sutil */
     cursor: pointer;         /* Mantener el cursor pointer */
 }
 
 #clear-button .button-icon {
     margin: 0;
     color: var(--buddy-primary);  /* Color del icono */
+    background: transparent !important;
 }
 
 #clear-button .button-icon svg {
-    fill: white;
+    fill: transparent !important;
     width: 1.25rem;
     height: 1.25rem;
+    stroke: none !important;
+}
+
+#clear-button:hover {
+    background: var(--buddy-accent);  /* Un fondo sutil en hover */
 }
 
 /* Lista de respuestas */
@@ -467,7 +494,7 @@ pre {
 
 #language-options {
     min-width: 150px; /* Ajustar ancho del dropdown */
-    background-color: white;
+    background-color: var(--vscode-editor-background) !important;
     border: 1px solid var(--buddy-border);
     border-radius: 8px;
     padding: 8px 0;
@@ -475,7 +502,7 @@ pre {
 }
 
 .hint-content {
-    background: var(--vscode-editor-background);
+    background-color: var(--buddy-card-bg);
     border: 1px solid var(--buddy-border);
     border-radius: 8px;
     padding: 1.5rem;
@@ -570,8 +597,7 @@ pre {
     margin: 0 auto;
     background-color: var(--vscode-editor-background);
     border-radius: 8px;
-    padding: 1rem 2rem;
-    padding-right: 3rem;
+    padding: 1rem 3rem; /* Padding horizontal aumentado para dar espacio a los botones */
     box-sizing: border-box;
 }
 
@@ -609,7 +635,8 @@ pre {
 .concept-content {
     width: 100%;
     line-height: 1.6;
-    text-align: left; /* Alinear texto a la izquierda */
+    text-align: left;
+    padding: 0 0.5rem; /* Padding extra para separar del borde */
 }
 
 .concept-title {
@@ -699,7 +726,8 @@ pre {
 }
 
 .usage-section pre {
-    background: var(--buddy-background);
+    background-color: var(--buddy-card-bg);
+    border: 1px solid var(--buddy-border);
     padding: 1rem;
     border-radius: 6px;
     overflow-x: auto;
@@ -714,15 +742,16 @@ pre {
 }
 
 .uml-diagram {
-    background-color: white;
+    background-color: var(--buddy-card-bg);
     padding: 1rem;
     border-radius: 6px;
-    font-family: monospace;
+    font-family: var(--vscode-editor-font-family, monospace);
     white-space: pre;
     overflow-x: auto;
     line-height: 1.4;
     border: 1px solid var(--buddy-border);
     margin-top: 0.5rem;
+    color: var(--vscode-editor-foreground);
 }
 
 .uml-diagram .decision {
@@ -790,6 +819,7 @@ pre {
 .concept-nav-button:hover {
     background-color: var(--buddy-secondary);
     transform: scale(1.1);
+    opacity: 1;
 }
 
 /* Hacer los botones de navegación más pequeños */
@@ -829,71 +859,41 @@ pre {
     margin-top: 0.5rem;
 }
 
-.expand-button:hover {
-    background-color: rgba(220, 20, 54, 0.1);
+/* Nueva clase para el contenedor de la flecha */
+.expand-button .arrow-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto; /* Empuja la flecha a la derecha */
 }
 
-.expand-button svg {
-    transition: transform 0.3s ease;
+/* Estilo de la flecha */
+.expand-button .arrow-right svg {
+    width: 16px;
+    height: 16px;
+    color: var(--buddy-primary);
+    transition: transform 0.2s ease;
 }
 
-.expand-button.expanded svg {
-    transform: rotate(45deg);
-}
-
-.followup-answer.visible {
-    display: block;
-    animation: slideDown 0.2s ease-out;
+/* Rotación de la flecha cuando está expandido */
+.expand-button.expanded .arrow-right svg {
+    transform: rotate(90deg);
 }
 
 .answer-section {
     margin-top: 0.5rem;
 }
 
-.expand-button:hover {
-    background-color: var(--buddy-accent);
-}
-
-.expand-button .icon-text {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 .expand-button svg {
     transition: transform 0.3s ease;
 }
 
-.expand-button.expanded svg {
-    transform: rotate(45deg);
-}
-
-.followup-answer.visible {
-    display: block;
-    animation: slideDown 0.3s ease-out;
-}
-
 .concept-nav-button.prev {
-    left: 1rem;
+    left: 0;
 }
 
 .concept-nav-button.next {
-    right: -1rem;
-}
-
-.expand-button .icon-text {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.expand-button:hover {
-    background-color: var(--buddy-accent);
-}
-
-.followup-answer.visible {
-    display: block;
-    animation: slideDown 0.3s ease-out;
+    right: 0;
 }
 
 /* Navegación */
@@ -901,12 +901,13 @@ pre {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: calc(100% + 2rem);
-    left: -1rem;
+    width: calc(100% + 4rem);
+    left: -2rem;
     display: flex;
     justify-content: space-between;
     pointer-events: none;
     z-index: 10;
+    padding: 0;
 }
 
 .followup-question {
@@ -929,10 +930,6 @@ pre {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
-
-.expand-button svg {
-    transition: transform 0.3s ease;
 }
 
 .expand-button.expanded svg {
@@ -1093,6 +1090,9 @@ pre {
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    position: fixed;
-    font-size: 0.8rem;
+    position: absolute;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+    z-index: 10;
 }

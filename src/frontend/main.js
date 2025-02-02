@@ -321,6 +321,29 @@ function prevSlide(sliderId) {
         let curQueryList;
         
         switch (message.type) {
+            case 'error':
+            hideLoader();
+            // Creamos un div para mostrar el mensaje de error
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'buddy-error-message';
+            errorDiv.textContent = message.message;
+            
+            // Lo insertamos al principio de la lista
+            if (qaList.firstChild) {
+                qaList.insertBefore(errorDiv, qaList.firstChild);
+            } else {
+                qaList.appendChild(errorDiv);
+            }
+            
+            // Auto-eliminar después de 5 segundos
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+            break;
+
+        case "stopProgress":
+            hideLoader();
+            break;
             case "addDetail":
     if (message.detailType === "solution") {
         const responseDiv = document.createElement('div');

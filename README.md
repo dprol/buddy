@@ -35,6 +35,10 @@
 
 ---
 
+<div align="center">
+
+<p></p>
+
 ## Conceptos Clave
 
 [Conceptos](https://buddy-a805c3e6.mintlify.app/essentials/conceptos) fundamentales de programación directamente relacionados con el problema planteado. Estas definiciones complementan las explicaciones del instructor en clase, ayudando a los estudiantes a comprender mejor los conceptos.
@@ -69,6 +73,8 @@
 [Preguntas de seguimiento](https://buddy-a805c3e6.mintlify.app/essentials/preguntas) relacionadas con el problema planteado, acompañadas de sus respectivas respuestas. Este enfoque fomenta una exploración más profunda del tema y ayuda al usuario a reflexionar sobre diferentes aspectos del problema, promoviendo un aprendizaje más integral.
 
 ![Preguntas de seguimiento](extension/media/FollowUp.png)
+
+</div>
 
 ## Contacto
 💬 Por favor escribe [aquí](mailto:danielprolperez@gmail.com) para cualquier pregunta o sugerencia.

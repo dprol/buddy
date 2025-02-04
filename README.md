@@ -35,53 +35,59 @@
 
 ---
 
-### Conceptos clave
-
-<img align="left" width="370" src="extension/media/Conceptos.png">
-
+## Conceptos Clave
 El asistente ofrece definiciones concisas y claras de conceptos fundamentales de programación directamente relacionados con el problema planteado. Estas definiciones complementan las explicaciones del instructor en clase, ayudando a los estudiantes a comprender mejor los conceptos.
+<img
+    max-width="400"
+    width="370"
+    src="extension/media/Conceptos.png"
+    alt="conceptos"
+>
 
-<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
-
-### Ejemplos en pseudocódigo y diagrama de flujo
-
-<img align="right" width="340" src="extension/media/diagrama.png">
-
+## Ejemplos en Pseudocódigo y Diagrama de Flujo
 El asistente crea un ejemplo en pseudocódigo, acompañado de un diagrama de flujo, que ilustra la solución al problema planteado. Este enfoque permite comprender el problema de manera más clara al descomponerlo en pasos lógicos y visualizar su solución de forma estructurada.
+<img
+    max-width="400"
+    width="340"
+    src="extension/media/diagrama.png"
+    alt="diagrama"
+>
 
-<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
-
-### Pistas para empezar
-
-<img align="left" width="370" src="extension/media/pistas.png">
-
+## Pistas para Empezar
 El asistente ofrece al usuario una lista enumerada con tres pasos o pistas iniciales para abordar el problema. Estas indicaciones están diseñadas para orientar al usuario en cómo comenzar la solución y estructurar su enfoque de manera lógica.
+<img
+    max-width="400"
+    width="370"
+    src="extension/media/pistas.png"
+    alt="pistas"
+>
 
-<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
-
-### Sugerencias para el próximo paso
-
-<img align="right" width="340" src="extension/media/NextStep.png">
-
+## Sugerencias para el Próximo Paso
 El asistente proporciona sugerencias específicas para el siguiente paso en el desarrollo del código, adaptadas al contexto del fragmento seleccionado por el usuario. Estas recomendaciones ayudan al usuario a avanzar en la resolución del problema, especialmente cuando no sabe cómo proceder o se encuentra atascado, guiándolo de manera práctica.
+<img
+    max-width="400"
+    width="340"
+    src="extension/media/NextStep.png"
+    alt="siguiente paso"
+>
 
-<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
-
-### Explicación de la solución
-
-<img align="right" width="340" src="extension/media/solucion.png">
-
+## Explicación de la Solución
 El asistente ofrece una explicación detallada de una solución posible, desglosando paso a paso el funcionamiento y la lógica que sustentan una respuesta correcta. Esto permite al usuario comprender profundamente el razonamiento detrás de la solución, independientemente de si su intento previo fue acertado o no, fortaleciendo así su conocimiento y habilidades en programación.
+<img
+    max-width="400"
+    width="340"
+    src="extension/media/solucion.png"
+    alt="solución"
+>
 
-<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
-
-### Preguntas de seguimiento
-
-<img align="right" width="340" src="extension/media/FollowUp.png">
-
+## Preguntas de Seguimiento
 El asistente formula tres preguntas de seguimiento relacionadas con el problema planteado, acompañadas de sus respectivas respuestas. Este enfoque fomenta una exploración más profunda del tema y ayuda al usuario a reflexionar sobre diferentes aspectos del problema, promoviendo un aprendizaje más integral.
-
-<img width="2000" height="0" src="https://github.com/user-attachments/assets/ee14e6f7-20b8-4391-9091-8e8e25561929"><br>
+<img
+    max-width="400"
+    width="340"
+    src="extension/media/FollowUp.png"
+    alt="seguimiento"
+>
 
 ## Contacto
 💬 Por favor escribe [aquí](mailto:danielprolperez@gmail.com) para cualquier pregunta o sugerencia.

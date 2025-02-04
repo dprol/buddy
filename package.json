@@ -43,36 +43,34 @@
             }
         ],
         "configuration": {
-            "title": "Buddy AI",
-            "properties": {
-                "BuddyAI.aiProvider": {
-                    "type": "string",
-                    "enum": [
-                        "anthropic"
-                    ],
-                    "default": "anthropic",
-                    "description": "Proveedor de IA a utilizar"
-                },
-                "BuddyAI.anthropic.model": {
-                    "type": "string",
-                    "default": "claude-3-5-sonnet-20241022",
-                    "description": "Modelo de Anthropic a utilizar"
-                },
-                "BuddyAI.maxTokens": {
-                    "type": "number",
-                    "default": 2000,
-                    "minimum": 1,
-                    "description": "Número máximo de tokens por solicitud"
-                },
-                "BuddyAI.temperature": {
-                    "type": "number",
-                    "default": 0.5,
-                    "minimum": 0,
-                    "maximum": 1,
-                    "description": "Temperatura para la generación de respuestas (0-1)"
-                }
-            }
+    "title": "Buddy AI",
+    "properties": {
+        "BuddyAI.aiProvider": {
+            "type": "string",
+            "enum": ["anthropic"],
+            "default": "anthropic",
+            "description": "Proveedor de IA a utilizar"
         },
+        "BuddyAI.anthropic.model": {
+            "type": "string",
+            "default": "claude-3-5-sonnet-20241022",
+            "description": "Modelo de Anthropic a utilizar"
+        },
+        "BuddyAI.maxTokens": {
+            "type": "number",
+            "default": 1000,
+            "minimum": 0.5,
+            "description": "Número máximo de tokens por solicitud"
+        },
+        "BuddyAI.temperature": {
+            "type": "number",
+            "default": 0.5,
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Temperatura para la generación de respuestas (0-1)"
+        }
+    }
+},
         "viewsContainers": {
             "activitybar": [
                 {
@@ -114,8 +112,6 @@
         "eslint": "^8.28.0",
         "glob": "^8.0.3",
         "mocha": "^10.1.0",
-        "react": "^18.3.1",
-        "react-dom": "^18.3.1",
         "typescript": "^4.9.5"
     },
     "dependencies": {
@@ -123,6 +119,8 @@
         "@ts-stack/markdown": "^1.0.0",
         "highlight.js": "^11.10.0",
         "indent-string": "^5.0.0",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
         "json5": "^2.2.3"
     },
     "author": "Daniel Prol",

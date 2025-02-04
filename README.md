@@ -69,7 +69,7 @@
 
 ![Sugerencias para el siguiente paso](extension/media/solucionmerged.png)
 
-## Preguntas de Seguimiento
+## Preguntas de seguimiento
 [Preguntas de seguimiento](https://buddy-a805c3e6.mintlify.app/essentials/preguntas) relacionadas con el problema planteado, acompañadas de sus respectivas respuestas. Este enfoque fomenta una exploración más profunda del tema y ayuda al usuario a reflexionar sobre diferentes aspectos del problema, promoviendo un aprendizaje más integral.
 
 ![Preguntas de seguimiento](extension/media/FollowUp.png)

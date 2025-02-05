@@ -43,6 +43,7 @@ class BuddyViewProvider {
         this.ac = new AbortController();
         this.overviewId = 0;
         this.currentLanguage = 'python'; // Valor por defecto
+        this.isApiConfigured = false; // Nuevo estado
     }
 
 updateLanguage(language) {
@@ -100,8 +101,10 @@ updateLanguage(language) {
             }
     
             this.anthropic = new Anthropic({ apiKey });
+            this.isApiConfigured = true; // Set this flag
             console.log("Conexión establecida con Anthropic");
         } catch (error) {
+            this.isApiConfigured = false;
             vscode.window.showErrorMessage('Error: Se requiere una clave API válida de Anthropic.');
             throw error;
         }
@@ -125,35 +128,38 @@ updateLanguage(language) {
             this.sendMessage({ type: 'showLoader' });
             console.log('Iniciando petición API:', queryType);
             
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) {
-                this.sendMessage({
-                    type: 'error',
-                    message: 'No hay un editor activo.'
-                });
-                return;
+            // Solo para AskAINextStep necesitas un editor activo
+            if (queryType === 'askAINextStep') {
+                const editor = vscode.window.activeTextEditor;
+                if (!editor) {
+                    this.sendMessage({
+                        type: 'error',
+                        message: 'No hay un editor activo.'
+                    });
+                    return;
+                }
             }
-    
+        
             this.sendMessage({ type: 'showProgress' });
             
             const problemText = {
                 text: selectedText,
                 language: this.currentLanguage
             };
-    
+        
             let [chatPrompt, prompt, assistantPrompt] = await this.preparePrompt(
                 queryType, 
                 problemText
             );
-    
+        
             console.log('Prompt preparado:', prompt);
-    
+        
             let output = await this.queryAI(
                 chatPrompt,
                 assistantPrompt,
                 abortController
             );
-    
+        
             console.log('Respuesta recibida:', output);
             await this.processQueryResponse(queryType, output, prompt, queryId, selectedText);
             
@@ -525,7 +531,7 @@ updateLanguage(language) {
             prompt = `Analiza el siguiente problema y proporciona exactamente 3 definiciones de los conceptos clave de programación presentes.
             Si es un concepto específico del lenguaje ${language}, incluye ejemplos en ese lenguaje.
             
-            Usa EXACTAMENTE este formato para cada concepto, incluyendo los marcadores CONCEPTO: y EXPLICACIÓN::
+            Usa EXACTAMENTE este formato para cada concepto:
         
             CONCEPTO: [nombre del concepto]
             EXPLICACIÓN: [explicación detallada adaptada al lenguaje ${language}]
@@ -615,48 +621,49 @@ updateLanguage(language) {
         
         if (queryType === "askAIConcept") {
             const concepts = [];
-            const conceptPairs = output.split(/CONCEPTO:/g).filter(Boolean);
-            
-            for (const pair of conceptPairs) {
-                const explanationMatch = pair.match(/\s*(.*?)\s*EXPLICACIÓN:\s*([\s\S]*?)(?=(?:\s*CONCEPTO:|$))/i);
-                
-                if (explanationMatch) {
-                    concepts.push({
-                        title: explanationMatch[1].trim(),
-                        content: explanationMatch[2].trim()
-                    });
-                }
+            const conceptRegex = /CONCEPTO:\s*(.*?)\s*EXPLICACIÓN:\s*([\s\S]*?)(?=\s*CONCEPTO:|$)/g;
+            let match;
+        
+            while ((match = conceptRegex.exec(output)) !== null) {
+                concepts.push({
+                    title: match[1].trim(),
+                    content: match[2].trim()
+                });
+            }
+        
+            if (concepts.length === 0) {
+                console.error('No se pudieron extraer conceptos de la respuesta:', output);
             }
             
             const sliderId = `concept-slider-${Date.now()}`;
-valueHtml = `
-    <div class="concepts-container" id="${sliderId}">
-        <div class="concepts-slider">
-            ${concepts.map((concept, index) => {
-                const formattedContent = concept.content.replace(
-                    /```(\w+)?\s*([\s\S]*?)```/g,
-                    (_, lang, code) => `<pre><code class="language-${this.currentLanguage}">${code.trim()}</code></pre>`
-                );
-                return `
-                    <div class="concept-card ${index === 0 ? 'active' : ''}" data-index="${index}">
-                        <h3 class="concept-title">${concept.title}</h3>
-                        <div class="concept-content">${formattedContent}</div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-        <div class="concepts-navigation">
-            <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
-            <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
-        </div>
-        <div class="concepts-indicators">
-            ${concepts.map((_, index) => `
-                <button class="concept-indicator ${index === 0 ? 'active' : ''}"
-                        data-index="${index}"
-                        onclick="goToSlide('${sliderId}', ${index})"></button>
-            `).join('')}
-        </div>
-    </div>`;
+            valueHtml = `
+            <div class="concepts-container" id="${sliderId}">
+                <div class="concepts-slider">
+                    ${concepts.map((concept, index) => {
+                        const formattedContent = concept.content.replace(
+                            /```(\w+)?\s*([\s\S]*?)```/g,
+                            (_, lang, code) => `<pre><code class="language-${this.currentLanguage}">${code.trim()}</code></pre>`
+                        );
+                        return `
+                            <div class="concept-card ${index === 0 ? 'active' : ''}" data-index="${index}">
+                                <h3 class="concept-title">${concept.title}</h3>
+                                <div class="concept-content">${Marked.parse(formattedContent)}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="concepts-navigation">
+                    <button class="concept-nav-button prev" onclick="prevConcept('${sliderId}')">←</button>
+                    <button class="concept-nav-button next" onclick="nextConcept('${sliderId}')">→</button>
+                </div>
+                <div class="concepts-indicators">
+                    ${concepts.map((_, index) => `
+                        <button class="concept-indicator ${index === 0 ? 'active' : ''}"
+                                data-index="${index}"
+                                onclick="goToSlide('${sliderId}', ${index})"></button>
+                    `).join('')}
+                </div>
+            </div>`;
         } else if (queryType === "askAIUsage") {
             const pseudoMatch = output.match(/Pseudocódigo:([\s\S]*?)(?=Diagrama de flujo:|$)/i);
             const diagramMatch = output.match(/Diagrama de flujo:([\s\S]*?)(?=@startuml|$)/i);
@@ -763,6 +770,29 @@ valueHtml = `
             console.log('Mensaje recibido en resolveWebviewView:', data);
             
             try {
+                if (data.type === 'setApiKey') {
+                    console.log("🔄 Recibiendo API Key en backend:", data.value);
+                    try {
+                        // Use the context's secrets storage
+                        await this.context.secrets.store('buddy.anthropic.apiKey', data.value);
+                        
+                        // Reinitialize the connection with the new API key
+                        await this.setUpConnection();
+                        
+                        // Send a success message back to the frontend
+                        this.sendMessage({ 
+                            type: 'success', 
+                            message: '✅ API Key guardada correctamente' 
+                        });
+                    } catch (error) {
+                        console.error("❌ Error al guardar API Key:", error);
+                        this.sendMessage({ 
+                            type: 'error', 
+                            message: '❌ Clave API inválida' 
+                        });
+                    }
+                }
+        
                 if (data.type === 'languageChanged') {
                     this.updateLanguage(data.language);
                     return;
@@ -1024,6 +1054,30 @@ function goToSlide(sliderId, index) {
                         </button>
                     </div>
 
+                    <!-- Añadir la nueva sección de API key aquí -->
+<div class="api-config-container" style="padding: 1rem; margin-top: 1rem; background: var(--vscode-input-background); border-radius: 4px;">
+    <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">API Provider</label>
+        <select class="form-select" id="api-provider" style="width: 100%; padding: 0.5rem; background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground); border: 1px solid var(--vscode-dropdown-border);">
+            <option value="anthropic">Anthropic</option>
+        </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">API Key</label>
+        <input type="password" 
+               class="form-input" 
+               id="api-key" 
+               placeholder="Enter your API key"
+               style="width: 100%; padding: 0.5rem; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border);">
+        <p class="helper-text" style="font-size: 0.875rem; color: var(--vscode-descriptionForeground); margin-top: 0.5rem;">
+            This key is stored locally and only used to make API requests from this extension.
+        </p>
+    </div>
+    <button id="save-api-key" class="buddy-button action-button">
+    Save API Key
+</button>
+</div>
+
                     <div id="loader-container" class="hidden">
                         <svg class="loader-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
     <circle fill="var(--buddy-primary)" stroke="var(--buddy-primary)" stroke-width="15" r="15" cx="40" cy="100">
@@ -1151,7 +1205,7 @@ document.addEventListener('click', (e) => {
         });
         return;
     }
-        // Guardar el texto del problema y el lenguaje actual
+    
     const messageData = {
         type: 'askAIConcept',
         problemText: {
@@ -1160,7 +1214,7 @@ document.addEventListener('click', (e) => {
         }
     };
     
-    console.log('Enviando solicitud de conceptos:', messageData); // Para debugging
+    console.log('Enviando solicitud de conceptos:', messageData);
     
     document.getElementById('loader-container').classList.remove('hidden');
     vscode.postMessage(messageData);
@@ -1273,6 +1327,23 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
         }
     });
 
+    document.getElementById('save-api-key')?.addEventListener('click', () => {
+    const apiKey = document.getElementById('api-key').value;
+    if (apiKey) {
+        console.log("📩 Sending API Key:", apiKey);
+        vscode.postMessage({
+            type: 'setApiKey',
+            value: apiKey
+        });
+    } else {
+        console.error("⚠️ No API Key entered");
+        vscode.postMessage({
+            type: 'error',
+            message: 'Please enter an API key'
+        });
+    }
+});
+
     // Event listener para mensajes
     window.addEventListener('message', event => {
     const message = event.data;
@@ -1286,10 +1357,31 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
             document.getElementById('loader-container')?.classList.add('hidden');
             break;
             
-        case 'error':
-            document.getElementById('loader-container')?.classList.add('hidden');
-            alert(message.message);
-            break;
+        case 'success':
+    console.log("Success:", message.message);
+    const saveButton = document.getElementById('save-api-key');
+    if (saveButton) {
+        saveButton.textContent = '✅ Saved';
+        
+        // Ocultar el contenedor de configuración de API
+        const apiConfigContainer = document.querySelector('.api-config-container');
+        if (apiConfigContainer) {
+            setTimeout(() => {
+                apiConfigContainer.style.display = 'none';
+            }, 1000);
+        }
+        
+        // Opcional: volver al texto original después de un tiempo
+        setTimeout(() => {
+            saveButton.textContent = 'Save API Key';
+        }, 2000);
+    }
+    break;
+           
+case 'error':
+    console.error("Error:", message.message);
+    alert(message.message);
+    break;
 
         case 'updateProblem':
             document.getElementById('problem-text').value = message.text;
@@ -1315,6 +1407,14 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
             break;
 
         case 'addDetail':
+    if (message.detailType === 'concept') {
+        console.log('Recibiendo respuesta de conceptos:', message);
+        
+        if (!message.valueHtml) {
+            console.error('No hay contenido HTML en la respuesta');
+            return;
+        }
+    }
         case 'addOverview':
         case 'solutionResponse':
         case 'followUpResponse':

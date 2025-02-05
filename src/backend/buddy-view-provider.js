@@ -543,7 +543,7 @@ updateLanguage(language) {
                 assistantPrompt = "Aquí tienes una pista útil:".trim();
         } else if (queryType === 'askAISolution') {
             prompt = `Analiza el siguiente problema y proporciona una solución detallada en ${language}. 
-            La solución debe estar dividida en exactamente 3 partes usando este formato:
+            La solución debe estar dividida en exactamente 3 partes usando este formato y alguna de las tarjetas debe hablar de complejidad y eficiencia:
         
             PARTE1:
             TÍTULO: [título descriptivo de esta parte]

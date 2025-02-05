@@ -2,7 +2,7 @@
     "name": "buddy-ai",
     "displayName": "Buddy AI - Asistente de Programación para Estudiantes",
     "description": "Buddy es una extensión de VS Code que ayuda a los estudiantes a comprender mejor los problemas de programación.",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "repository": {
         "type": "git",
         "url": "https://github.com/dprol/buddy.git"

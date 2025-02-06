@@ -72,8 +72,8 @@ updateLanguage(language) {
             const response = await this.anthropic.messages.create({
                 model: "claude-3-5-sonnet-20241022",
                 messages: cleanMessages,
-                max_tokens: 2000,
-                temperature: 0.5,
+                max_tokens: 1000,
+                temperature: 0.7,
                 system: cleanMessages[0].content.trim()
             });
     
@@ -525,7 +525,15 @@ updateLanguage(language) {
                 return;
             }
         
-            prompt = `Analiza este código en ${language} y sugiere ÚNICAMENTE el siguiente fragmento de código más fácil de entender (de máximo una línea) que debería añadirse, sin explicaciones ni comentarios adicionales. Solo proporciona el código en un bloque de código de ${language}.\n\nCódigo actual:\n${selectedText}`;
+            prompt = `Analiza este código en ${language} y sugiere el siguiente fragmento de código que debería añadirse (máximo una línea) junto con una breve explicación de por qué es el siguiente paso lógico.
+
+Proporciona la respuesta en este formato:
+
+CÓDIGO ACTUAL:
+${selectedText}
+
+EXPLICACIÓN: [breve explicación de por qué este es el siguiente paso]
+SIGUIENTE PASO: [código en ${language}]`;
             assistantPrompt = "Siguiente paso:".trim();
         } else if (queryType === 'askAIConcept') {
             prompt = `Analiza el siguiente problema y proporciona exactamente 3 definiciones de los conceptos clave de programación presentes.
@@ -615,9 +623,9 @@ updateLanguage(language) {
 
     async processQueryResponse(queryType, output, prompt, queryId, editorSelectedText) {
         console.log('Procesando respuesta:', queryType);
-        
-        let valueHtml = '';
-        const detailType = queryType.replace("askAI", "").toLowerCase();
+            
+            let valueHtml = '';
+            const detailType = queryType.replace("askAI", "").toLowerCase();
         
         if (queryType === "askAIConcept") {
             const concepts = [];
@@ -709,7 +717,46 @@ updateLanguage(language) {
             detailType: detailType,
             valueHtml: valueHtml
         });
+
+        if (queryType === "askAINextStep") {
+            const codigoActualMatch = output.match(/CÓDIGO ACTUAL:[\s\S]*?(?=EXPLICACIÓN:|$)/);
+            const explicacionMatch = output.match(/EXPLICACIÓN:\s*([\s\S]*?)(?=SIGUIENTE PASO:|$)/);
+            const siguientePasoMatch = output.match(/SIGUIENTE PASO:\s*([\s\S]*?)$/);
+       
+            const codigoActual = codigoActualMatch ? codigoActualMatch[0].replace(/CÓDIGO ACTUAL:/, '').trim() : editorSelectedText;
+            const explicacion = explicacionMatch ? explicacionMatch[1].trim() : '';
+            const siguientePaso = siguientePasoMatch ? siguientePasoMatch[1].trim() : '';
+       
+            valueHtml = `
+                <div class="next-step-container">
+                    <div class="code-section">
+                        <h3>Código Actual</h3>
+                        <pre><code class="language-${this.currentLanguage}">${codigoActual}</code></pre>
+                    </div>
+                   
+                    <div class="next-step-section">
+                        <div class="explanation">${explicacion}</div>
+                        <h3>Siguiente Paso</h3>
+                        <pre><code class="language-${this.currentLanguage}">${siguientePaso}</code></pre>
+                    </div>
+                </div>
+            `;
     
+            this.sendMessage({
+                type: 'addDetail',
+                value: output,
+                detailType: 'nextstep',
+                valueHtml: valueHtml
+            });
+        } else if (queryType === "askAIConcept") {
+            // código existente para conceptos
+            // ... y su propio sendMessage
+        } else if (queryType === "askAIUsage") {
+            // código existente para usage
+            // ... y su propio sendMessage
+        }
+       
+        // Actualizar el historial del chat
         if (queryType === "askAIQuery") {
             this.updateChatHistory(prompt, output, editorSelectedText);
         } else {
@@ -719,7 +766,7 @@ updateLanguage(language) {
             );
         }
     }
-
+    
     sendMessage(message) {
         console.log('Enviando mensaje a WebView:', message);
         if (this.webView) {
@@ -1057,24 +1104,24 @@ function goToSlide(sliderId, index) {
                     <!-- Añadir la nueva sección de API key aquí -->
 <div class="api-config-container" style="padding: 1rem; margin-top: 1rem; background: var(--vscode-input-background); border-radius: 4px;">
     <div class="form-group" style="margin-bottom: 1rem;">
-        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">API Provider</label>
+        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Proveedor de API</label>
         <select class="form-select" id="api-provider" style="width: 100%; padding: 0.5rem; background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground); border: 1px solid var(--vscode-dropdown-border);">
             <option value="anthropic">Anthropic</option>
         </select>
     </div>
     <div class="form-group" style="margin-bottom: 1rem;">
-        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">API Key</label>
+        <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Clave de API de Anthropic</label>
         <input type="password" 
                class="form-input" 
                id="api-key" 
-               placeholder="Enter your API key"
+               placeholder="Ingresa la clave de API..."
                style="width: 100%; padding: 0.5rem; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border);">
         <p class="helper-text" style="font-size: 0.875rem; color: var(--vscode-descriptionForeground); margin-top: 0.5rem;">
-            This key is stored locally and only used to make API requests from this extension.
+            Esta clave se almacena localmente y solo se utiliza para realizar solicitudes a la API desde esta extensión.
         </p>
     </div>
     <button id="save-api-key" class="buddy-button action-button">
-    Save API Key
+    Guardar Clave API
 </button>
 </div>
 
@@ -1361,7 +1408,7 @@ document.getElementById('follow-up-button')?.addEventListener('click', () => {
     console.log("Success:", message.message);
     const saveButton = document.getElementById('save-api-key');
     if (saveButton) {
-        saveButton.textContent = '✅ Saved';
+        saveButton.textContent = '✅ Guardada';
         
         // Ocultar el contenedor de configuración de API
         const apiConfigContainer = document.querySelector('.api-config-container');

@@ -128,13 +128,28 @@ updateLanguage(language) {
             this.sendMessage({ type: 'showLoader' });
             console.log('Iniciando petición API:', queryType);
             
-            // Solo para AskAINextStep necesitas un editor activo
             if (queryType === 'askAINextStep') {
                 const editor = vscode.window.activeTextEditor;
                 if (!editor) {
                     this.sendMessage({
                         type: 'error',
                         message: 'No hay un editor activo.'
+                    });
+                    return;
+                }
+            
+                // Añade estos logs para diagnóstico
+                console.log('Editor selection:', editor.selection);
+                console.log('Selected text range:', editor.selection.start, editor.selection.end);
+                
+                selectedText = editor.document.getText(editor.selection);
+                
+                console.log('Texto seleccionado:', selectedText);
+                
+                if (!selectedText) {
+                    this.sendMessage({
+                        type: 'error',
+                        message: '⚠️ Por favor, selecciona el código del que quieres saber el siguiente paso.'
                     });
                     return;
                 }
@@ -162,18 +177,18 @@ updateLanguage(language) {
         
             console.log('Respuesta recibida:', output);
             await this.processQueryResponse(queryType, output, prompt, queryId, selectedText);
-            
-            this.sendMessage({ type: 'hideLoader' });
-            
-        } catch (error) {
-            console.error('Error en sendApiRequestWithCode:', error);
-            this.sendMessage({
-                type: 'error',
-                message: 'Error: ' + error.message
-            });
-            this.sendMessage({ type: 'hideLoader' });
-        }
+        
+        this.sendMessage({ type: 'hideLoader' });
+        
+    } catch (error) {
+        console.error('Error en sendApiRequestWithCode:', error);
+        this.sendMessage({
+            type: 'error',
+            message: 'Error: ' + error.message
+        });
+        this.sendMessage({ type: 'hideLoader' });
     }
+}
     async sendApiRequestWithHint(problemText) {
         if (!problemText || !problemText.text) {
             console.error('Error: Texto del problema no proporcionado para askAIHint');
@@ -623,6 +638,7 @@ SIGUIENTE PASO: [código en ${language}]`;
 
     async processQueryResponse(queryType, output, prompt, queryId, editorSelectedText) {
         console.log('Procesando respuesta:', queryType);
+        console.log('Texto seleccionado en processQueryResponse:', editorSelectedText);
             
             let valueHtml = '';
             const detailType = queryType.replace("askAI", "").toLowerCase();
@@ -719,28 +735,48 @@ SIGUIENTE PASO: [código en ${language}]`;
         });
 
         if (queryType === "askAINextStep") {
-            const codigoActualMatch = output.match(/CÓDIGO ACTUAL:[\s\S]*?(?=EXPLICACIÓN:|$)/);
-            const explicacionMatch = output.match(/EXPLICACIÓN:\s*([\s\S]*?)(?=SIGUIENTE PASO:|$)/);
-            const siguientePasoMatch = output.match(/SIGUIENTE PASO:\s*([\s\S]*?)$/);
-       
-            const codigoActual = codigoActualMatch ? codigoActualMatch[0].replace(/CÓDIGO ACTUAL:/, '').trim() : editorSelectedText;
-            const explicacion = explicacionMatch ? explicacionMatch[1].trim() : '';
-            const siguientePaso = siguientePasoMatch ? siguientePasoMatch[1].trim() : '';
-       
-            valueHtml = `
-                <div class="next-step-container">
-                    <div class="code-section">
-                        <h3>Código Actual</h3>
-                        <pre><code class="language-${this.currentLanguage}">${codigoActual}</code></pre>
+            // Usar una expresión regular más robusta para extraer la información
+            const explanationMatch = output.match(/EXPLICACIÓN:\s*(.*)/s);
+            const nextStepMatch = output.match(/SIGUIENTE PASO:\s*(.*)/s);
+            
+            console.log("Matches encontrados:", {
+                explanationMatch: explanationMatch ? explanationMatch[1] : null,
+                nextStepMatch: nextStepMatch ? nextStepMatch[1] : null
+            });
+            
+            // Verificar si editorSelectedText es undefined o está vacío
+            const currentCode = editorSelectedText || 'Código no disponible';
+            
+            if (!explanationMatch || !nextStepMatch) {
+                console.error('No se encontraron los matches esperados. Usando contenido completo.');
+                valueHtml = `
+                    <div class="next-step-container">
+                        <div class="next-step-section">
+                            <h3 class="code-title">Siguiente Paso</h3>
+                            <div class="code-block">
+                                <pre><code class="language-${this.currentLanguage}">${output.trim()}</code></pre>
+                            </div>
+                        </div>
                     </div>
-                   
-                    <div class="next-step-section">
-                        <div class="explanation">${explicacion}</div>
-                        <h3>Siguiente Paso</h3>
-                        <pre><code class="language-${this.currentLanguage}">${siguientePaso}</code></pre>
+                `;
+            } else {
+                const explanation = explanationMatch[1].trim();
+                const nextStepCode = nextStepMatch[1].trim();
+                
+                valueHtml = `
+                        
+                        <div class="next-step-section">
+                            <h3 class="code-title">Siguiente Paso</h3>
+                            <div class="explanation-block">
+                                <div class="block-content">${explanation}</div>
+                            </div>
+                            <div class="code-block">
+                                <pre><code class="language-${this.currentLanguage}">${nextStepCode}</code></pre>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
     
             this.sendMessage({
                 type: 'addDetail',
@@ -755,7 +791,7 @@ SIGUIENTE PASO: [código en ${language}]`;
             // código existente para usage
             // ... y su propio sendMessage
         }
-       
+        
         // Actualizar el historial del chat
         if (queryType === "askAIQuery") {
             this.updateChatHistory(prompt, output, editorSelectedText);
@@ -766,7 +802,6 @@ SIGUIENTE PASO: [código en ${language}]`;
             );
         }
     }
-    
     sendMessage(message) {
         console.log('Enviando mensaje a WebView:', message);
         if (this.webView) {
@@ -1311,7 +1346,7 @@ document.getElementById('hint-button')?.addEventListener('click', () => {
 });
 
 document.getElementById('next-step-button')?.addEventListener('click', () => {
-    document.getElementById('loader-container').classList.remove('hidden');
+    // Verificar que haya un editor activo
     vscode.postMessage({ 
         type: 'askAINextStep',
         problemText: {
@@ -1319,7 +1354,7 @@ document.getElementById('next-step-button')?.addEventListener('click', () => {
             language: currentLanguage
         }
     });
-    document.getElementById('in-progress')?.classList.remove('hidden');
+    document.getElementById('loader-container').classList.remove('hidden');
     closeDropdown();
 });
 // Event listeners
